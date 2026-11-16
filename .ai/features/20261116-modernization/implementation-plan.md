@@ -1,6 +1,6 @@
 # allSnap modernization implementation plan
 
-Status: Phase 10 cleans up solution/application-project naming after the user committed Phase 9. Production code, runtime names, GUIDs, configurations, and output paths are unchanged. Test execution was not requested for this naming milestone; the last test results remain Phase 7 (286/286 in Debug/Release on Win32/x64). Build and reference verification are recorded under Phase 10 below. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
+Status: Phase 11 completes the first focused Clean Code increment after the user committed Phase 10: separate INI per-setting serialization from save traversal, preserving existing semantics. All eight solution builds pass; independent semantic review is complete. No tests were executed, as test execution was not requested for this increment; the last results remain Phase 7 (286/286 in Debug/Release on Win32/x64). Verification details and limits are recorded under Phase 11 below. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
 
 ## Current position
 
@@ -11,6 +11,7 @@ Status: Phase 10 cleans up solution/application-project naming after the user co
 - Completed in Phase 8: root README covering build/run commands, settings, dual-architecture operation, tests, source navigation, and known limitations.
 - Completed in Phase 9: folder organization with project/include/filter, installer-input, help-output, and documentation references updated; behavior and project naming preserved.
 - Completed in Phase 10: root solution/application project/filter filenames align with the existing `allsnap` project name; references updated without renaming runtime binaries or source symbols.
+- Completed in Phase 11: INI save serialization and traversal have separate responsibilities; goto-based save exits replaced by direct returns, with existing behavior preserved by review.
 - Native unit/acceptance tests now cover 286 methods (97 unit, 189 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
 - User handles all commits. Agents do not stage, commit, reset, or amend. Phase boundaries below are review checkpoints, not claims of commits already created.
 
@@ -28,7 +29,8 @@ Status: Phase 10 cleans up solution/application-project naming after the user co
 | 8. Repository README | Build/run/configuration/test instructions, source navigation, and known limitations | Complete and independently reviewed; commands, claims, and local links checked against source. No builds or tests rerun. |
 | 9. Folder organization | Separate app, engine, common code, resources, help, packaging, and legacy material | Complete and independently reviewed. Moved C/headers/resources unchanged; all eight solution builds pass, project/local-link checks pass; no tests executed. |
 | 10. Solution/project naming | `allsnap.sln`, `allsnap.vcxproj`, matching filters and active references | Complete and independently reviewed; all eight solution builds, reference/metadata checks, and whitespace checks pass. No tests executed. |
-| Later backlog phases | Clean Code refactoring | Not started; keep behavioral, structural, and naming changes separate. |
+| 11. Clean Code: INI save path | Separate per-setting serialization from ordered save traversal in one production file | Complete and independently reviewed; all eight builds and whitespace checks pass. Existing tests inspected, not executed; runtime regression verification remains outstanding. |
+| Later backlog phases | Further Clean Code refactoring | First increment complete; keep subsequent changes bounded and separate from behavior repairs. |
 ## Execution sequence
 
 ### 1. Establish the test foundation and protect confinement
@@ -79,7 +81,7 @@ Verification: unit/acceptance results on both architectures plus native test-own
 
 ## Backlog
 
-The canonical list is [`.ai/backlog.md`](../../backlog.md), with stable item IDs and separate requested/proposed work. Next priorities are B-001 (actual desktop/process-lifetime verification) and B-002 (remaining Settings coverage). Audio removal, the README, folder organization, and naming cleanup are complete; Clean Code work remains a separate follow-up milestone. A single launcher/tray is proposed and would still manage both helper architectures.
+The canonical list is [`.ai/backlog.md`](../../backlog.md), with stable item IDs and separate requested/proposed work. Next priorities are B-001 (actual desktop/process-lifetime verification) and B-002 (remaining Settings coverage). Audio removal, the README, folder organization, naming cleanup, and the first Clean Code increment are complete. B-007 remains open for further bounded refactoring milestones. A single launcher/tray is proposed and would still manage both helper architectures.
 
 ## Phase 5 execution
 
@@ -177,7 +179,7 @@ Remaining verification and design work:
 - Check representative applications at 100% and on the current HiDPI display, then mixed-DPI monitor transitions and the older home monitor. UI compatibility scaling is approved; fractional caller coordinates can round physical spacing to a representable value.
 - Phases 6/7 exercise the retained native property-sheet controls, owned MDI/class filtering, and the real tray controller through a substituted Shell boundary. Still validate actual Explorer delivery, host menu dispatch, context help and keyboard navigation. Disabled aspect-ratio/auto-lineup features remain disabled; app audio has been removed.
 - Preserve explicit impossible-fit limits: oversized movement uses an accessible-origin fallback; ordinary resizing does not translate an outside fixed edge; centered resizing cannot always fit if its original center is outside the desktop.
-- The user committed Phase 9 and authorized the Phase 10 naming cleanup. Refactoring remains a separate backlog phase. The user owns commits.
+- The user committed Phase 10 and authorized the first focused Clean Code milestone, completed in Phase 11. Further refactoring remains in B-007. The user owns commits.
 
 ## Phase 8 execution: repository README
 
@@ -208,3 +210,13 @@ Updated the solution's app-project path, app RootNamespace metadata (`snapit` to
 Verification: all eight `allsnap.sln` builds passed (Debug, Release, Debug UNICODE, Release UNICODE for Win32/x64), including test-project compilation without executing tests. Logs are under ignored `build/naming-verification/`. Solution project/item paths and local Markdown links resolve, exact project/filter comparisons confirm the metadata-only scope, and `git diff --check` passed. Independent review found no further required corrections. Historical build records above retain the solution filename used at the time.
 
 No tests were executed; the last test results remain Phase 7's 286/286 in Debug/Release on each architecture. No app/global hooks were launched, user settings changed, or Git staging/commits performed. Open `allsnap.sln` in Visual Studio; old recent-solution entries may need replacing. Manual desktop checks and Clean Code refactoring remain separate milestones.
+
+## Phase 11 execution: focused INI save refactoring
+
+The user committed Phase 10 before authorizing the first focused Clean Code milestone. Scope is only the save implementation in `src/app/snap_ini.c`. Extracted file-local `SaveSettingToINI` to serialize one table entry, leaving `SaveSettingsToINI` responsible for path lookup, ordered traversal, and immediate failure returns. Removed save-specific goto labels, status bookkeeping, and an obsolete registry-close comment. No new abstraction layer, module, API, test seam, or behavior requirement was introduced.
+
+Preserved the exact settings table/order, getter types and calls, raw BOOL serialization, UINT-to-int conversion, string writes, successful REGT_MULTI no-op, and unsupported-type diagnostic/failure. A missing path or first failed write still returns FALSE; earlier successful writes remain in place. Public success/failure results remain canonical TRUE/FALSE. Loading, numeric parsing/validation, empty/missing key handling, path caching, runtime preservation, and all other source modules are untouched.
+
+Verification: independent review compared all save branches and getter/write sequencing with HEAD. A prefix comparison confirms the entire file before the save implementation is unchanged. All eight `allsnap.sln` builds passed (Debug, Release, Debug UNICODE, Release UNICODE on Win32/x64), including test-project compilation without test execution. Logs are under ignored `build/refactoring-ini-save-verification/`; `git diff --check` passed.
+
+Existing tests inspected: INI round trips and save failure in `tests/unit/settings_tests.cpp`; Apply failure/retry in `tests/acceptance/settings_acceptance.cpp` and `property_sheet_acceptance.cpp`; fresh/legacy save behavior in `silent_ini_acceptance.cpp`. No tests were added or executed. These checks do not provide a new runtime regression result; the last executed suite remains Phase 7's 286/286 in Debug/Release on each architecture. No app/global hooks were launched, user settings changed, or Git staging/commits performed. Further refactoring stays in separate reviewable milestones under B-007.

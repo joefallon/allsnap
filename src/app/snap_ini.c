@@ -247,59 +247,47 @@ BOOL LoadSettingsFromINI(void){ return LoadSettings(FALSE); }
 BOOL LoadSettingsForDialog(void){ return LoadSettings(TRUE); }
 
 
-BOOL SaveSettingsToINI (void){
-	int	  temp_int;
-	BOOL fOK=FALSE;
-	int		reg_index = 0;
+static BOOL SaveSettingToINI(const REG_ITEM * item, LPCTSTR inipath){
+	LPCTSTR value_name = item->value_name;
+	PFV_GET getter = item->pfv_getter;
+	int value;
 
+	switch(item->rt){
+		case REGT_BOOL:
+			value = (int) ((PF_GET_BOOL)getter)();
+			break;
+		case REGT_INT:
+			value = (int) ((PF_GET_INT)getter)();
+			break;
+		case REGT_UINT:
+			value = (int) ((PF_GET_UINT)getter)();
+			break;
+		case REGT_MULTI:
+			return TRUE;
+		case REGT_SZ:
+			return INIsetStringVal(value_name,((PF_GET_SZ)getter)(),inipath);
+		case REGT_EMPTY:
+		default:
+			_RPT0(_CRT_ERROR,"bad regitem");
+			return FALSE;
+	}
+
+	return setInt(value_name,value,inipath);
+}
+
+BOOL SaveSettingsToINI (void){
+	int setting_index;
 	LPCTSTR inipath = get_ini_path();
 
 	if (!inipath){
 		return FALSE;
 	}
-	
-	while (ini_items[reg_index].rt!=REGT_EMPTY){
-		LPCTSTR val_name = ini_items[reg_index].value_name;
-        PFV_GET pfvGet =   ini_items[reg_index].pfv_getter;
 
-		switch(ini_items[reg_index].rt){
-			case REGT_BOOL:
-				temp_int = (int) ((PF_GET_BOOL)(pfvGet))();
-				goto SAVE_INT;
-			case REGT_INT:
-				temp_int = (int) ((PF_GET_INT)(pfvGet))();
-				goto SAVE_INT;
-			case REGT_UINT:
-				temp_int = (int) ((PF_GET_UINT)(pfvGet))();
-SAVE_INT:
-				if (!setInt(val_name,temp_int,inipath)){
-					goto SSTR_ERROR;
-				}
-				break;
-
-
-			case REGT_MULTI:
-				break;
-
-			case REGT_SZ:
-				if (!INIsetStringVal (val_name,((PF_GET_SZ)pfvGet)(),inipath)){
-					goto SSTR_ERROR;
-				}
-				break;
-			
-
-
-			case REGT_EMPTY:
-			default:
-				_RPT0(_CRT_ERROR,"bad regitem");
-				goto SSTR_ERROR;
-
-		}//switch
-		reg_index++;
-	}//while
-
-	fOK = TRUE;
-SSTR_ERROR:
-    //RegCloseKey(myKey);
-	return fOK;
+	/* Stop at the first failed write; earlier settings remain saved. */
+	for (setting_index = 0; ini_items[setting_index].rt!=REGT_EMPTY; setting_index++){
+		if (!SaveSettingToINI(&ini_items[setting_index],inipath)){
+			return FALSE;
+		}
+	}
+	return TRUE;
 }
