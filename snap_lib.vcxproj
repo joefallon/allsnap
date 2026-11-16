@@ -60,7 +60,7 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;dwmapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -76,6 +76,8 @@
     <ClCompile Include="snap_CenterSize.c" />
     <ClCompile Include="snap_CornerInfo.c" />
     <ClCompile Include="snap_Crop.c" />
+    <ClCompile Include="snap_frame.c" />
+    <ClCompile Include="snap_keys.c" />
     <ClCompile Include="snap_EqualSize.c" />
     <ClCompile Include="snap_InTests.c" />
     <ClCompile Include="snap_KeepToScreen.c" />

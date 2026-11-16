@@ -3,6 +3,8 @@
 #include "snap_lib_internal.h"
 #include "snap_KeepToScreen.h"
 #include "snap_ResultStack.h"
+#include "snap_WinRects.h"
+#include "snap_frame.h"
 
 #define DISTANCE(x1,x2) (abs( (x1) - (x2)))
 
@@ -54,7 +56,8 @@ void moving_test_all
 	PTEST_RECTS ptest_rects,
 	SNAP_RESULTS * p_snap_results
 ){
-	TEST_INFO test_info;
+	TEST_INFO test_info = {0};
+	ResultStack rs_v,rs_h;
 	int rect_index;
 	UINT snap_type = getSnapType();
 
@@ -62,6 +65,10 @@ void moving_test_all
 	
 	test_info.mine = p_my_rect;
 	test_info.sizing= FALSE;
+	ResultStack_Init(&rs_v);
+	ResultStack_Init(&rs_h);
+	test_info.p_v_rstck = &rs_v;
+	test_info.p_h_rstck = &rs_h;
 
 	clear_snap_results(p_snap_results);
 	
@@ -72,14 +79,7 @@ void moving_test_all
 	}
 	
 	
-	if ((snap_type & SNAPT_OTHERS) != 0){
-		ResultStack rs_v,rs_h;
-		ResultStack_Init(&rs_v);
-        ResultStack_Init(&rs_h);
-		
-		test_info.p_v_rstck = &rs_v;
-		test_info.p_h_rstck = &rs_h;
-
+	if ((snap_type & (SNAPT_OTHERS | SNAPT_SELF)) != 0){
 		test_info.snap_insides = isSnappingInsides();
 		test_info.threshold		 = win_threshold;
 		test_info.side_threshold = win_threshold;
@@ -108,6 +108,7 @@ void sizing_test_all
 	BOOL centering
 ){
 	TEST_INFO test_info = {TRUE,FALSE,SIDE_NONE,SIDE_NONE,NULL,NULL,0,0,TRUE,NULL,NULL};
+	ResultStack rs_v,rs_h;
 	int rect_index;
 	UINT snap_type = getSnapType();
 	clear_snap_results(p_snap_results);
@@ -118,6 +119,10 @@ void sizing_test_all
 	test_info.sizing= TRUE;
 	test_info.snap_insides = TRUE;
 	test_info.centering = centering;
+	ResultStack_Init(&rs_v);
+	ResultStack_Init(&rs_h);
+	test_info.p_v_rstck = &rs_v;
+	test_info.p_h_rstck = &rs_h;
 
 #ifdef _DEBUG
 	if (test_info.sizing){
@@ -139,14 +144,7 @@ void sizing_test_all
 
 	
 	//doing more than you have to since we know what edge(s) is being sized
-	if ((snap_type & SNAPT_OTHERS) != 0){
-		ResultStack rs_v,rs_h;
-		ResultStack_Init(&rs_v);
-        ResultStack_Init(&rs_h);
-		
-		test_info.p_v_rstck = &rs_v;
-		test_info.p_h_rstck = &rs_h;
-        
+	if ((snap_type & (SNAPT_OTHERS | SNAPT_SELF)) != 0){
 		test_info.snap_insides = isSnappingInsides();
 		test_info.threshold = win_threshold;
 		test_info.side_threshold = win_threshold;
@@ -226,13 +224,21 @@ INLINE void remove_inside_snaps(SNAP_RESULTS * p_results){
 
 INLINE void test_rect(TEST_INFO * p_test_info, SNAP_RESULTS * p_snap_results)
 {
+	p_test_info->work_area_target = FALSE;
+	BOOL old_position = WinRects_IsOldPosition(p_test_info->yours);
 	SNAP_RESULTS temp_results;
 	clear_snap_results(&temp_results);
 
-	test_dimension(SIDE_LEFT,SIDE_RIGHT,p_test_info,&(temp_results.h));
-	test_dimension(SIDE_TOP,SIDE_BOTTOM,p_test_info,&(temp_results.v));
+	if (old_position){
+		/* A saved position matches corresponding edges, not an adjacent phantom window. */
+		test_screen_dimension(SIDE_LEFT,SIDE_RIGHT,p_test_info,&(temp_results.h));
+		test_screen_dimension(SIDE_TOP,SIDE_BOTTOM,p_test_info,&(temp_results.v));
+	}else{
+		test_dimension(SIDE_LEFT,SIDE_RIGHT,p_test_info,&(temp_results.h));
+		test_dimension(SIDE_TOP,SIDE_BOTTOM,p_test_info,&(temp_results.v));
+	}
 
-	if ( !(p_test_info->snap_insides) )
+	if (!old_position && !(p_test_info->snap_insides))
 		remove_inside_snaps(&temp_results);
 
 	if (p_test_info->sizing && !p_test_info->centering){
@@ -469,6 +475,7 @@ void test_screens(PTEST_RECTS ptest_rects, TEST_INFO * p_test_info, SNAP_RESULTS
 
 void test_screen_rect(TEST_INFO * p_test_info, SNAP_RESULTS * p_snap_results)
 {
+	p_test_info->work_area_target = WinRects_IsWorkArea(p_test_info->yours);
 	SNAP_RESULTS temp_results;
 
 	clear_snap_results(&temp_results);
@@ -485,6 +492,7 @@ void test_screen_rect(TEST_INFO * p_test_info, SNAP_RESULTS * p_snap_results)
 
 void test_hcenter(TEST_INFO * p_test_info, SNAP_RESULTS * p_snap_results)
 {
+	p_test_info->work_area_target = FALSE;
 	SNAP_RESULTS temp_results;
 	clear_snap_results(&temp_results);
 
@@ -494,6 +502,7 @@ void test_hcenter(TEST_INFO * p_test_info, SNAP_RESULTS * p_snap_results)
 }
 void test_vcenter(TEST_INFO * p_test_info, SNAP_RESULTS * p_snap_results)
 {
+	p_test_info->work_area_target = FALSE;
 	SNAP_RESULTS temp_results;
 	clear_snap_results(&temp_results);
 
@@ -556,11 +565,19 @@ INLINE void test_2_sides_for_snap(enum SIDE my_side, enum SIDE your_side,TEST_IN
 	
 	my_val	= GetSideOfRect(my_side,p_test_info->mine);
 	your_val= GetSideOfRect(your_side,p_test_info->yours);
+	if (p_test_info->work_area_target && my_side == your_side){
+		RECT inset;
+		SnapFrame_InsetWorkArea(p_test_info->yours,&inset);
+		your_val = GetSideOfRect(your_side,&inset);
+	}else if (!p_test_info->work_area_target && your_side == OppositeSide(my_side)){
+		int spacing = SnapFrame_GetSpacing(my_side);
+		your_val += isLargerSide(my_side) ? -spacing : spacing;
+	}
 	
 	new_distance	= DISTANCE(my_val,your_val);
 	new_closeness   = DISTANCE(my_val,your_val);
 
-	if ( (new_distance < p_test_info->threshold) 
+	if ( (new_distance <= p_test_info->threshold)
 		&& is_it_closer(new_closeness,p_test_info,p_side_results) ){
 		p_side_results->from_oss	= FALSE;
 		p_side_results->side		= my_side;

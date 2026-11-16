@@ -9,6 +9,7 @@
 #include "mydebug.h"
 #include "snap_MultiSz.h"
 #include "snap_mywm_msg.h"
+#include "snap_lifecycle_test.h"
 
 #ifdef BEEPING
 #define BEEP {MessageBeep(-1);}
@@ -40,7 +41,6 @@
 //with all instances of this aplication.?
 
 #pragma data_seg(SHARENAME)
-HHOOK	g_hhook			= NULL;
 HWND	g_hWnd_app		= NULL;
 UINT	g_sounds_thread_id		= 0;
 
@@ -66,7 +66,9 @@ BOOL	g_kept_to_screen		= FALSE;
 BOOL	g_cropping_rgn			= TRUE;
 OSVERSIONINFO		g_os;
 
-BOOL	g_subclassing			= FALSE;
+volatile LONG g_active_subclasses = 0;
+volatile LONG g_hook_stopping = FALSE;
+int g_window_spacing = 0;
 
 TCHAR	g_skinned_classes[MAX_CLASSNAME_LENGTH * MAX_NUM_CLASS_NAMES] =
   _T("icoCTactTrilly;Winamp v1.x;ConsoleWindowClass;Winamp PE;Winamp EQ;Winamp MB;BaseWindow_RootWnd");	
@@ -74,6 +76,9 @@ TCHAR	g_ignored_classes[MAX_CLASSNAME_LENGTH * MAX_NUM_CLASS_NAMES] =
   _T("Progman;IDEOwner;NeilShadow");
 #pragma data_seg()
 
+HHOOK g_hhook = NULL;
+volatile LONG g_local_registration = 0;
+DWORD g_subclass_thread = 0;
 SUBCLASSPROC	g_subclass_proc = NULL;
 HWND	g_subclassed_window = NULL;
 WNDPROC g_original_proc = NULL; 
@@ -166,165 +171,266 @@ BOOL is_matching_platform(HWND hwnd){
 
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinstDll, DWORD fdwReason, PVOID fImplLoad){
-
-	switch(fdwReason){
- 
-		case DLL_PROCESS_ATTACH:
-			//DLL is attaching to the address space of the current process
-			g_hinstDll = hinstDll;
-			break;
-			 
-		case DLL_THREAD_ATTACH:
-			break;
- 
-		case DLL_THREAD_DETACH:
-			/*
-			if (GetParent(g_subclassed_window) == g_hWnd_app){
-				break;
-			} 
-			if (g_subclassed_window != NULL){
-				UnSubclass(g_subclassed_window);
-			}*/
-			break;    
-			//MessageBeep(-1);
-
-		case DLL_PROCESS_DETACH:
-			//if (wdjIsSubclassed((WNDPROC)SubclassProc,g_subclassed_window)){
-			//	wdjUnhook((WNDPROC)SubclassProc,g_subclassed_window);
-			//	//g_subclassed_window = NULL;
-			//} 
-
- 
-			UnSubclass(g_subclassed_window);
-			g_subclassing = FALSE;
-			 	
-			break;
- 
-	} 
-	return(TRUE);
-}
-
-BOOL WINAPI SnapHookAll(HWND hwnd,UINT thread_id,OSVERSIONINFO os){
-
-    g_hWnd_app = hwnd;
-	g_sounds_thread_id = thread_id;
-	g_os = os;
-
-	if (g_hhook==NULL){
-
-			g_hhook = SetWindowsHookEx(WH_CALLWNDPROC
-				,(HOOKPROC)CallWndProc,g_hinstDll,0);
-	}
-
-	return (g_hhook!= NULL);
-}
-
-BOOL WINAPI SnapUnHookAll(){
-	//ASSERT g_hhook!= NULL
-	BOOL fOk = FALSE;
-	//UnSubclass();
-	fOk = UnhookWindowsHookEx(g_hhook);
-	g_hhook = NULL;
-
-	return fOk;
-} 
-
-BOOL WINAPI SnapCanUnHook(){ 
-	return !g_subclassing;
-}
-
-void UnSubclass(HWND hWnd){
-   //DBG_MSG_PTR(g_hWnd_app,DBGMSG_UNSUBCLASS_OLD,g_subclass_proc);
-	BOOL res = FALSE;
 #ifdef _WIN64
-	res = RemoveWindowSubclass(g_subclassed_window,(SUBCLASSPROC)SubclassProc64,ALLSNAP_SUBCLASS_ID);
+#define SNAP_SUBCLASS_PROC SubclassProc64
 #else
-	res = RemoveWindowSubclass(g_subclassed_window,(SUBCLASSPROC)SubclassProc32,ALLSNAP_SUBCLASS_ID);
+#define SNAP_SUBCLASS_PROC SubclassProc32
 #endif
 
-   DBG_MSG_PTR(g_hWnd_app,DBGMSG_UNSUBCLASS_NEW,res);	
-
-	g_original_proc = NULL;
-	g_subclassed_window = NULL;
-	g_subclass_proc = NULL;
-	g_subclassing = FALSE;
-	g_moved_or_sized = FALSE;
-	g_num_msgs_so_far = 0;
-
-	
+#ifdef ALLSNAP_TESTING
+/* A test must explicitly supply a hook operation; never hook the user's desktop. */
+static HHOOK WINAPI TestHookNotSupported(int type, HOOKPROC proc, HINSTANCE instance, DWORD thread)
+{
+    (void)type; (void)proc; (void)instance; (void)thread;
+    SetLastError(ERROR_NOT_SUPPORTED);
+    return NULL;
 }
-
-void Subclass(HWND hwnd){
-	RECT winrect;
-	GetWindowRect(hwnd,&winrect);
-	g_last_height = rectHeight(winrect);
-	g_last_width = rectWidth(winrect);
-	
-	g_num_msgs_so_far = 0;
-	g_moved_or_sized = FALSE;
-	g_subclassed_window = hwnd;
-	g_subclassing = TRUE;
-#ifdef _WIN64
-	g_subclass_proc = (SUBCLASSPROC) SubclassProc64;
-
-//  g_original_proc = SubclassWindow(hwnd,g_subclass_proc);
-	if (SetWindowSubclass(hwnd,(SUBCLASSPROC) SubclassProc64,ALLSNAP_SUBCLASS_ID,0)){
-		snapper_OnEnterSizeMove(g_subclassed_window);
-		DBG_MSG_PTR(g_hWnd_app,DBGMSG_SUBCLASS_NEW,1);
-	}
-	else{
-		DBG_MSG_PTR(g_hWnd_app,DBGMSG_SUBCLASS_NEW,0);
-	}
+static BOOL WINAPI TestUnhookNotSupported(HHOOK hook)
+{
+    (void)hook;
+    SetLastError(ERROR_NOT_SUPPORTED);
+    return FALSE;
+}
+static const SNAP_LIFECYCLE_TEST_OPS g_default_lifecycle_ops = {
+    TestHookNotSupported, TestUnhookNotSupported, SetWindowSubclass, RemoveWindowSubclass
+};
+static SNAP_LIFECYCLE_TEST_OPS g_lifecycle_ops = {
+    TestHookNotSupported, TestUnhookNotSupported, SetWindowSubclass, RemoveWindowSubclass
+};
+#define LifecycleInstallHook g_lifecycle_ops.install_hook
+#define LifecycleRemoveHook g_lifecycle_ops.remove_hook
+#define LifecycleInstallSubclass g_lifecycle_ops.install_subclass
+#define LifecycleRemoveSubclass g_lifecycle_ops.remove_subclass
 #else
-	g_subclass_proc = (SUBCLASSPROC) SubclassProc32;
+#define LifecycleInstallHook SetWindowsHookEx
+#define LifecycleRemoveHook UnhookWindowsHookEx
+#define LifecycleInstallSubclass SetWindowSubclass
+#define LifecycleRemoveSubclass RemoveWindowSubclass
+#endif
 
-//  g_original_proc = SubclassWindow(hwnd,g_subclass_proc);
-	if (SetWindowSubclass(hwnd,(SUBCLASSPROC) SubclassProc32,ALLSNAP_SUBCLASS_ID,0)){
-		snapper_OnEnterSizeMove(g_subclassed_window);
-		DBG_MSG_PTR(g_hWnd_app,DBGMSG_SUBCLASS_NEW,1);
-	}
-	else{
-		DBG_MSG_PTR(g_hWnd_app,DBGMSG_SUBCLASS_NEW,0);
-	}
-#endif	
-
-} 
-
-LRESULT WINAPI CALLBACK CallWndProc(
-  int nCode,       // hook code
-  WPARAM wParam,  // removal option
-  LPARAM lParam   // message
-  ){ 
-	PCWPSTRUCT lpCHook=(PCWPSTRUCT)lParam; 
-	HWND hwnd = lpCHook->hwnd;
-	
-
-	
-	if (nCode == HC_ACTION){ 
-		switch(lpCHook->message){
-			case WM_ENTERSIZEMOVE: 
-				DBG_MSG(g_hWnd_app,DBGMSG_NCLBDOWN);
-				if(
-					(isSnapMdi() || !IS_MDI_CHILD(hwnd))
-					&& isEnabled()
-					&& !IsZoomed(hwnd)
-					//&& ( (GetAsyncKeyState(getToggleKey())!=0) || isDisableToggle())
-					){
-
-			 		Subclass(hwnd);
-					//SetCapture(g_subclassed_window);
-				}
-				break; 
-			case WM_EXITSIZEMOVE:
-				UnSubclass(g_subclassed_window);
-				break; 
-		}
-	}
-
-	return(CallNextHookEx(g_hhook, nCode, wParam, lParam));
+static DWORD LifecycleError(void)
+{
+    DWORD error = GetLastError();
+    return error ? error : ERROR_GEN_FAILURE;
 }
 
+static void ReportLifecycleFailure(enum SNAP_DIAGNOSTIC_STAGE stage, DWORD error)
+{
+    if (g_hWnd_app != NULL)
+        PostMessage(g_hWnd_app, MYWM_DIAGNOSTIC, (WPARAM)stage, (LPARAM)error);
+    SetLastError(error);
+}
+
+/* Safe under loader lock: no User32/Comctl calls and no waits for other threads. */
+static void ReleaseLocalSubclass(void)
+{
+    /* Keep the local slot unavailable until all old ownership fields are cleared. */
+    if (InterlockedCompareExchange(&g_local_registration, -1, 1) != 1)
+        return;
+    g_original_proc = NULL;
+    g_subclassed_window = NULL;
+    g_subclass_proc = NULL;
+    g_subclass_thread = 0;
+    g_moved_or_sized = FALSE;
+    g_num_msgs_so_far = 0;
+    InterlockedDecrement(&g_active_subclasses);
+    InterlockedExchange(&g_local_registration, 0);
+}
+
+static void SubclassWindowDestroyed(HWND hwnd)
+{
+    if (hwnd == g_subclassed_window && GetCurrentThreadId() == g_subclass_thread)
+        ReleaseLocalSubclass();
+}
+
+#ifndef ALLSNAP_TESTING
+BOOL WINAPI DllMain(HINSTANCE hinstDll, DWORD fdwReason, PVOID reserved)
+{
+    (void)reserved;
+    if (fdwReason == DLL_PROCESS_ATTACH)
+        g_hinstDll = hinstDll;
+    else if (fdwReason == DLL_PROCESS_DETACH)
+        ReleaseLocalSubclass();
+    return TRUE;
+}
+#endif
+
+BOOL WINAPI SnapHookAll(HWND hwnd, UINT thread_id, OSVERSIONINFO os)
+{
+    HHOOK hook;
+    if (g_hhook != NULL)
+        return TRUE;
+    SetLastError(ERROR_SUCCESS);
+    hook = LifecycleInstallHook(WH_CALLWNDPROC, (HOOKPROC)CallWndProc, g_hinstDll, 0);
+    if (hook == NULL) {
+        DWORD error = LifecycleError();
+        SetLastError(error);
+        return FALSE;
+    }
+    g_hhook = hook;
+    g_hWnd_app = hwnd;
+    g_sounds_thread_id = thread_id;
+    g_os = os;
+    InterlockedExchange(&g_hook_stopping, FALSE);
+    return TRUE;
+}
+
+BOOL WINAPI SnapUnHookAll(void)
+{
+    DWORD error;
+    if (g_hhook == NULL)
+        return TRUE;
+    InterlockedExchange(&g_hook_stopping, TRUE);
+    if (InterlockedCompareExchange(&g_active_subclasses, 0, 0) != 0) {
+        InterlockedExchange(&g_hook_stopping, FALSE);
+        SetLastError(ERROR_BUSY);
+        return FALSE;
+    }
+    SetLastError(ERROR_SUCCESS);
+    if (!LifecycleRemoveHook(g_hhook)) {
+        error = LifecycleError();
+        InterlockedExchange(&g_hook_stopping, FALSE);
+        ReportLifecycleFailure(SNAP_DIAG_HOOK_REMOVE, error);
+        return FALSE;
+    }
+    g_hhook = NULL;
+    return TRUE;
+}
+
+BOOL WINAPI SnapCanUnHook(void)
+{
+    return InterlockedCompareExchange(&g_active_subclasses, 0, 0) == 0;
+}
+
+static BOOL TryUnSubclass(HWND hwnd)
+{
+    DWORD error;
+    if (InterlockedCompareExchange(&g_local_registration, 0, 0) == 0)
+        return TRUE;
+    if (hwnd != g_subclassed_window) {
+        SetLastError(ERROR_INVALID_WINDOW_HANDLE);
+        return FALSE;
+    }
+    if (GetCurrentThreadId() != g_subclass_thread) {
+        SetLastError(ERROR_INVALID_THREAD_ID);
+        return FALSE;
+    }
+    if (!IsWindow(hwnd)) {
+        ReleaseLocalSubclass();
+        return TRUE;
+    }
+    SetLastError(ERROR_SUCCESS);
+    if (!LifecycleRemoveSubclass(hwnd, (SUBCLASSPROC)SNAP_SUBCLASS_PROC, ALLSNAP_SUBCLASS_ID)) {
+        error = LifecycleError();
+        ReportLifecycleFailure(SNAP_DIAG_SUBCLASS_REMOVE, error);
+        return FALSE;
+    }
+    ReleaseLocalSubclass();
+    return TRUE;
+}
+
+void UnSubclass(HWND hwnd)
+{
+    TryUnSubclass(hwnd);
+}
+
+static BOOL TrySubclass(HWND hwnd)
+{
+    RECT winrect;
+    DWORD error;
+    if (hwnd == NULL || !GetWindowRect(hwnd, &winrect)) {
+        SetLastError(ERROR_INVALID_WINDOW_HANDLE);
+        return FALSE;
+    }
+    if (InterlockedCompareExchange(&g_hook_stopping, 0, 0)) {
+        SetLastError(ERROR_BUSY);
+        return FALSE;
+    }
+    if (InterlockedCompareExchange(&g_local_registration, 1, 0) != 0) {
+        if (hwnd == g_subclassed_window && GetCurrentThreadId() == g_subclass_thread)
+            return TRUE;
+        SetLastError(ERROR_BUSY);
+        return FALSE;
+    }
+    /* Reserve before installing, so shutdown cannot pass an in-flight registration. */
+    InterlockedIncrement(&g_active_subclasses);
+    if (InterlockedCompareExchange(&g_hook_stopping, 0, 0)) {
+        ReleaseLocalSubclass();
+        SetLastError(ERROR_BUSY);
+        return FALSE;
+    }
+    SetLastError(ERROR_SUCCESS);
+    if (!LifecycleInstallSubclass(hwnd, (SUBCLASSPROC)SNAP_SUBCLASS_PROC, ALLSNAP_SUBCLASS_ID, 0)) {
+        error = LifecycleError();
+        ReleaseLocalSubclass();
+        ReportLifecycleFailure(SNAP_DIAG_SUBCLASS_INSTALL, error);
+        return FALSE;
+    }
+    g_subclassed_window = hwnd;
+    g_subclass_thread = GetCurrentThreadId();
+    g_subclass_proc = (SUBCLASSPROC)SNAP_SUBCLASS_PROC;
+    g_last_height = rectHeight(winrect);
+    g_last_width = rectWidth(winrect);
+    g_num_msgs_so_far = 0;
+    g_moved_or_sized = FALSE;
+    snapper_OnEnterSizeMove(hwnd);
+    return TRUE;
+}
+
+void Subclass(HWND hwnd)
+{
+    TrySubclass(hwnd);
+}
+
+LRESULT WINAPI CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    /* A negative hook code must be forwarded without inspecting its payload. */
+    if (nCode == HC_ACTION && lParam != 0) {
+        PCWPSTRUCT message = (PCWPSTRUCT)lParam;
+        HWND hwnd = message->hwnd;
+        if (message->message == WM_ENTERSIZEMOVE) {
+            if ((isSnapMdi() || !IS_MDI_CHILD(hwnd)) && isEnabled() && !IsZoomed(hwnd))
+                Subclass(hwnd);
+        } else if (message->message == WM_EXITSIZEMOVE) {
+            UnSubclass(hwnd);
+        }
+    }
+    /* The handle parameter is ignored; injected processes do not own the host hook. */
+    return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+
+#ifdef ALLSNAP_TESTING
+void SnapTest_LifecycleReset(void)
+{
+    ReleaseLocalSubclass();
+    InterlockedExchange(&g_active_subclasses, 0);
+    InterlockedExchange(&g_hook_stopping, FALSE);
+    g_hhook = NULL;
+    g_hWnd_app = NULL;
+    g_lifecycle_ops = g_default_lifecycle_ops;
+}
+void SnapTest_SetLifecycleOps(const SNAP_LIFECYCLE_TEST_OPS * operations)
+{
+    g_lifecycle_ops = g_default_lifecycle_ops;
+    if (operations == NULL) return;
+    if (operations->install_hook) g_lifecycle_ops.install_hook = operations->install_hook;
+    if (operations->remove_hook) g_lifecycle_ops.remove_hook = operations->remove_hook;
+    if (operations->install_subclass) g_lifecycle_ops.install_subclass = operations->install_subclass;
+    if (operations->remove_subclass) g_lifecycle_ops.remove_subclass = operations->remove_subclass;
+}
+BOOL SnapTest_Subclass(HWND hwnd) { return TrySubclass(hwnd); }
+BOOL SnapTest_UnSubclass(HWND hwnd) { return TryUnSubclass(hwnd); }
+void SnapTest_ProcessDetach(void) { ReleaseLocalSubclass(); }
+void SnapTest_WindowDestroyed(HWND hwnd) { SubclassWindowDestroyed(hwnd); }
+void SnapTest_SetExternalSubclassCount(LONG count)
+{
+    InterlockedExchange(&g_active_subclasses, count + (g_local_registration ? 1 : 0));
+}
+LONG SnapTest_ActiveSubclassCount(void) { return InterlockedCompareExchange(&g_active_subclasses, 0, 0); }
+HWND SnapTest_SubclassWindow(void) { return g_subclassed_window; }
+HHOOK SnapTest_HookHandle(void) { return g_hhook; }
+LRESULT SnapTest_CallHook(int code, WPARAM wparam, LPARAM lparam) { return CallWndProc(code, wparam, lparam); }
+#endif
 BOOL window_size_changed(HWND hwnd){
 	RECT win_rect;
 	int new_width,new_height;
@@ -375,6 +481,10 @@ LRESULT APIENTRY SubclassProc32(
 
 	switch(uMsg){
 
+        case WM_NCDESTROY:
+            SubclassWindowDestroyed(hwnd);
+            break;
+
 		//case WM_ENTERSIZEMOVE:
 		//	g_moved_or_sized = TRUE;
 #ifndef DBG_NO_MOVING
@@ -424,7 +534,27 @@ void WINAPI getGridSnap(gridsnap_settings_t  *p_grid_settings)
 
 void WINAPI setGridSnap(gridsnap_settings_t const * p_grid_settings)
 {
-	g_gridsnap = *p_grid_settings;
+	gridsnap_settings_t validated;
+	gridsnap_setting_t * dimensions[2];
+	int i;
+	if (!p_grid_settings){
+		return;
+	}
+	validated = *p_grid_settings;
+	dimensions[0] = &validated.h;
+	dimensions[1] = &validated.v;
+	for (i = 0; i < 2; ++i){
+		gridsnap_setting_t * setting = dimensions[i];
+		if (setting->type < GRIDTYPE_EVEN || setting->type > GRIDTYPE_SINGLE){
+			setting->type = GRIDTYPE_EVEN;
+			setting->val = 0;
+			setting->enabled = FALSE;
+		}else if (setting->val < 0 || (setting->type == GRIDTYPE_EVEN && setting->val > 100)){
+			setting->val = 0;
+			setting->enabled = FALSE;
+		}
+	}
+	g_gridsnap = validated;
 }
 
 BOOL WINAPI isEnabled(void){
@@ -477,6 +607,14 @@ void WINAPI setDisableToggle(BOOL is_disable_toggle){
 
 void WINAPI setWinThresh(int thresh){
 	g_win_thresh = thresh;
+}
+
+void WINAPI setWindowSpacing(int spacing){
+    g_window_spacing = spacing < 0 ? 0 : (spacing > 1000 ? 1000 : spacing);
+}
+
+int WINAPI getWindowSpacing(void){
+    return g_window_spacing;
 }
 
 void WINAPI setScreenThresh(int thresh){

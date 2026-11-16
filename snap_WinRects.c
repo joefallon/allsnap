@@ -25,14 +25,19 @@
 #define IS_WITHIN_X(x,min,max)( ((x)>min) && ((x)<max))
 
 RECT g_window_rects[MAX_RECTS];
-RECT g_screens[MAX_SCREEN_GRID];
+RECT g_screens[MAX_SCREENS];
+static RECT g_snap_rects[MAX_SCREEN_GRID];
+static BOOL g_snap_work_areas[MAX_SCREEN_GRID];
 RECT g_hcenter_move_rects[MAX_SCREENS];
 RECT g_vcenter_move_rects[MAX_SCREENS];
 RECT g_hcenter_size_rects[MAX_SCREENS];
 RECT g_vcenter_size_rects[MAX_SCREENS];
 
 static int g_num_rects;
+static int g_old_position_index = -1;
 static int g_num_screens;
+static int g_num_snap_rects;
+static int g_num_grid_rects;
 static int g_num_hcenter_move_rects;
 static int g_num_vcenter_move_rects;
 static int g_num_hcenter_size_rects;
@@ -42,6 +47,45 @@ static BOOL g_isFirstTime_windows;
 static BOOL g_isFirstTime_screens;
 
 static BOOL g_gotScreensAlready=FALSE;
+
+#ifdef ALLSNAP_TESTING
+static RECT g_test_current_screen;
+static BOOL g_test_screen_override = FALSE;
+
+void WinRects_TestSetScreens(const RECT * screens, int count, const RECT * current_screen){
+	int index;
+	g_num_screens = (screens && count > 0) ? min(count, MAX_SCREENS) : 0;
+	if (g_num_screens){
+		CopyMemory(g_screens, screens, g_num_screens * sizeof(RECT));
+		CopyMemory(g_snap_rects, screens, g_num_screens * sizeof(RECT));
+	}
+	g_num_snap_rects = g_num_screens;
+	g_num_grid_rects = 0;
+	for (index = 0; index < g_num_snap_rects; ++index){
+		g_snap_work_areas[index] = TRUE;
+	}
+	g_num_rects = 0;
+	g_old_position_index = -1;
+	g_num_hcenter_move_rects = g_num_hcenter_size_rects = 0;
+	g_num_vcenter_move_rects = g_num_vcenter_size_rects = 0;
+	if (current_screen){
+		g_test_current_screen = *current_screen;
+	}else if (g_num_screens){
+		g_test_current_screen = g_screens[0];
+	}else{
+		SetRectEmpty(&g_test_current_screen);
+	}
+	g_test_screen_override = TRUE;
+}
+
+void WinRects_TestSetWindows(const RECT * windows, int count){
+	g_old_position_index = -1;
+	g_num_rects = (windows && count > 0) ? min(count, MAX_RECTS) : 0;
+	if (g_num_rects){
+		CopyMemory(g_window_rects, windows, g_num_rects * sizeof(RECT));
+	}
+}
+#endif
 
 
 
@@ -105,6 +149,8 @@ BOOL CALLBACK EnumChildProc(
   LPARAM lParam   // application-defined value
 );
 
+static BOOL AddMonitorWorkArea(LPCRECT screen, LPCRECT window);
+
 BOOL CALLBACK EnumMonitorsProc(
   HMONITOR hMonitor,  // handle to display monitor
   HDC hdcMonitor,     // handle to monitor DC
@@ -114,30 +160,41 @@ BOOL CALLBACK EnumMonitorsProc(
 
 //this is dumb.. use an object
 INLINE void AddHCenterMove(LPCRECT p_rc){
-  if(g_num_hcenter_move_rects < MAX_SCREEN_GRID){
+  if(g_num_hcenter_move_rects < (int)chDIMOF(g_hcenter_move_rects)){
 	  g_hcenter_move_rects[g_num_hcenter_move_rects++] = *p_rc;
   }
 }
 INLINE void AddHCenterSize(LPCRECT p_rc){
-  if(g_num_hcenter_size_rects < MAX_SCREEN_GRID){
+  if(g_num_hcenter_size_rects < (int)chDIMOF(g_hcenter_size_rects)){
 	  g_hcenter_size_rects[g_num_hcenter_size_rects++] = *p_rc;
   }
 }
 INLINE void AddVCenterMove(LPCRECT p_rc){
-  if(g_num_vcenter_move_rects<MAX_SCREEN_GRID){
+  if(g_num_vcenter_move_rects < (int)chDIMOF(g_vcenter_move_rects)){
 	  g_vcenter_move_rects[g_num_vcenter_move_rects++] = *p_rc;
   }
 }
 INLINE void AddVCenterSize(LPCRECT p_rc){
-  if(g_num_vcenter_size_rects<MAX_SCREEN_GRID){
+  if(g_num_vcenter_size_rects < (int)chDIMOF(g_vcenter_size_rects)){
 	  g_vcenter_size_rects[g_num_vcenter_size_rects++] = *p_rc;
   }
 }
 
 INLINE void AddScreen(LPCRECT p_rc){
-  if(g_num_screens<MAX_SCREEN_GRID){
+  if(g_num_screens < (int)chDIMOF(g_screens) && g_num_snap_rects < (int)chDIMOF(g_snap_rects)){
 	  g_screens[g_num_screens++]=*p_rc;
+	  g_snap_work_areas[g_num_snap_rects] = TRUE;
+	  g_snap_rects[g_num_snap_rects++] = *p_rc;
   }
+}
+
+static void AddGuide(LPCRECT p_rc){
+	/* Guide capacity is separate so every supported work area retains a slot. */
+	if (g_num_grid_rects < MAX_GRIDS && g_num_snap_rects < (int)chDIMOF(g_snap_rects)){
+		g_snap_work_areas[g_num_snap_rects] = FALSE;
+		g_snap_rects[g_num_snap_rects++] = *p_rc;
+		++g_num_grid_rects;
+	}
 }
 
 
@@ -173,9 +230,7 @@ void InitGetWinRectsState(getwinrects_state_t * p_state,DWORD get_which,HWND my_
 	int i=0;
 
 	p_state->hrgn_visible_sofar = CreateRectRgn(0,0,0,0);
-	p_state->my_window = 
-		((get_which & SNAPT_SELF)!= 0 )?
-				NULL	:	my_window;
+	p_state->my_window = my_window;
 
 	p_state->get_which = get_which;
 
@@ -195,7 +250,7 @@ void AddHGridLine(int yval,LPCRECT pcScreen){
 	int xRight  = pcScreen->right;
 	int yBottom = pcScreen->bottom;
 	RECT to_add = {xLeft,yTop + yval,xRight,yTop + yval};
-	AddScreen(&to_add);
+	AddGuide(&to_add);
 }
 void AddVGridLine(int xval,LPCRECT pcScreen){
 	int xLeft   = pcScreen->left;
@@ -203,18 +258,18 @@ void AddVGridLine(int xval,LPCRECT pcScreen){
 	int xRight  = pcScreen->right;
 	int yBottom = pcScreen->bottom;
 	RECT to_add = {xLeft + xval,yTop,xLeft + xval,yBottom};
-	AddScreen(&to_add);
+	AddGuide(&to_add);
 }
 
 void AddAllHLines(LPCRECT pcScreen,int start,int num_lines,int spacing){
 	int i;
-	for(i=0;i<num_lines;i++){
+	for(i=0;i<num_lines && g_num_grid_rects < MAX_GRIDS;i++){
 		AddHGridLine(start + (i * spacing),pcScreen);
 	}
 }
 void AddAllVLines(LPCRECT pcScreen,int start,int num_lines,int spacing){
 	int i;
-	for(i=0;i<num_lines;i++){
+	for(i=0;i<num_lines && g_num_grid_rects < MAX_GRIDS;i++){
 		AddVGridLine(start + (i * spacing),pcScreen);
 	}
 }
@@ -230,15 +285,20 @@ void AddGrid(LPCRECT pcScreen){
 	gridsnap_settings_t settings;
 	getGridSnap(&settings);
 
-	if (settings.h.enabled && settings.h.val != 0){
+	if (settings.h.enabled && settings.h.val > 0){
 		switch(settings.h.type){
-			case GRIDTYPE_EVEN:
-				AddAllHLines(
-					pcScreen,
-					height/(settings.h.val + 1),
-					settings.h.val,
-					height/(settings.h.val+1));
+			case GRIDTYPE_EVEN: {
+				int line, previous = 0;
+				if (settings.h.val > MAX_GRIDS) break;
+				for (line = 1; line <= settings.h.val && g_num_grid_rects < MAX_GRIDS; ++line){
+					int offset = MulDiv(height, line, settings.h.val + 1);
+					if (offset > 0 && offset < height && offset != previous){
+						AddHGridLine(offset, pcScreen);
+						previous = offset;
+					}
+				}
 				break;
+			}
 			case GRIDTYPE_PIXELS:
 				AddAllHLines(
 					pcScreen,
@@ -249,21 +309,26 @@ void AddGrid(LPCRECT pcScreen){
 				break;
 			break;
 			case GRIDTYPE_SINGLE:
-				AddHGridLine(settings.h.val,pcScreen);
+				if (settings.h.val <= height) AddHGridLine(settings.h.val,pcScreen);
 			break;
 		}
 	}
 
 
-	if (settings.v.enabled && settings.v.val != 0){
+	if (settings.v.enabled && settings.v.val > 0){
 		switch(settings.v.type){
-			case GRIDTYPE_EVEN:
-				AddAllVLines(
-					pcScreen,
-					width/(settings.v.val + 1),
-					settings.v.val,
-					width/(settings.v.val+1));
+			case GRIDTYPE_EVEN: {
+				int line, previous = 0;
+				if (settings.v.val > MAX_GRIDS) break;
+				for (line = 1; line <= settings.v.val && g_num_grid_rects < MAX_GRIDS; ++line){
+					int offset = MulDiv(width, line, settings.v.val + 1);
+					if (offset > 0 && offset < width && offset != previous){
+						AddVGridLine(offset, pcScreen);
+						previous = offset;
+					}
+				}
 				break;
+			}
 			case GRIDTYPE_PIXELS:
 				AddAllVLines(
 					pcScreen,
@@ -274,22 +339,23 @@ void AddGrid(LPCRECT pcScreen){
 				break;
 			break;
 			case GRIDTYPE_SINGLE:
-				AddVGridLine(settings.v.val,pcScreen);
+				if (settings.v.val <= width) AddVGridLine(settings.v.val,pcScreen);
 			break;
 		}
 	}
 }
 
 void AddCenters(LPCRECT pcScreen,LPCRECT pcWin){
-	int xLeft   = pcScreen->left;
-	int yTop    = pcScreen->top;
-	int xRight  = pcScreen->right;
-	int yBottom = pcScreen->bottom;
+	int xLeft, yTop, xRight, yBottom;
 
 	if ((pcScreen == 0) || (pcWin == 0)){
 		
 		return;
 	}
+	xLeft = pcScreen->left;
+	yTop = pcScreen->top;
+	xRight = pcScreen->right;
+	yBottom = pcScreen->bottom;
 	
 	if ( (g_get_which & SNAPT_HCENTER) != 0){
 		int winWidth  = pcWin->right - pcWin->left;
@@ -337,17 +403,12 @@ BOOL CALLBACK EnumMonitorsProc(
 	if (g_num_screens >= MAX_SCREENS){
 		return FALSE;
 	}
-	GetMonitorInfo(hMonitor,&mi);
+	if (!GetMonitorInfo(hMonitor,&mi)){
+		return TRUE;
+	}
 	pScreen = &mi.rcWork;
 
-	AddScreen(pScreen);//???rcMonitor or rcWork
-	AddGrid(pScreen);
-
-	if ( (g_get_which & (SNAPT_HCENTER | SNAPT_VCENTER)) != 0){
-		AddCenters(pScreen,(LPCRECT)dwData);
-	}
-	
-	return TRUE;
+	return AddMonitorWorkArea(pScreen, (LPCRECT)dwData);
 }
 
 
@@ -431,8 +492,10 @@ BOOL isClassNameInArray(HWND hWnd,int array_length,LPCTSTR name_array[]){
 }
 
 BOOL IsIgnoredClass(HWND our_hWnd){
-	TCHAR class_name[MAX_CLASSNAME_LENGTH];
-	GetClassName(our_hWnd,class_name,MAX_CLASSNAME_LENGTH);
+	TCHAR class_name[MAX_CLASSNAME_LENGTH] = {0};
+	if (!GetClassName(our_hWnd,class_name,MAX_CLASSNAME_LENGTH)){
+		return FALSE;
+	}
 	return is_name_in_classlist(class_name, getIgnoredClasses());
 }
 
@@ -492,7 +555,7 @@ BOOL CALLBACK EnumWindowsProc(
 //???? I should really use HREGIONs 
 			BOOL is_valid = GetValidWinRect(hWnd,&new_rect);
 
-			BOOL is_covered = IsCompletelyCovered(p_getwin_state,new_rect);
+			BOOL is_covered = !is_valid || IsCompletelyCovered(p_getwin_state,new_rect);
 				//also updates visible region!!
 
 			if (is_valid && !is_covered){
@@ -509,14 +572,20 @@ BOOL CALLBACK EnumWindowsProc(
 
 void RefreshWindows(HWND our_hWnd){			
 	RECT rc = {0,0,1,1};
-	
-	GetValidWinRect(our_hWnd,&rc);
+	BOOL valid_initial = GetValidWinRect(our_hWnd,&rc);
 	g_num_rects=0;
+	g_old_position_index = -1;
 	g_num_screens = 0;
+	g_num_snap_rects = 0;
+	g_num_grid_rects = 0;
 	g_num_hcenter_move_rects = 0;
 	g_num_hcenter_size_rects = 0;
 	g_num_vcenter_move_rects = 0;
 	g_num_vcenter_size_rects = 0;
+	if (valid_initial && (g_get_which & SNAPT_SELF) != 0){
+		g_old_position_index = g_num_rects;
+		g_window_rects[g_num_rects++] = rc;
+	}
 	
 	
 	if (IS_MDI_CHILD(our_hWnd)){
@@ -552,14 +621,9 @@ void RefreshMdiWindows(HWND our_hWnd,LPCRECT pcRect)
 	HWND hMDIClient = GetParent(our_hWnd);
 	if (hMDIClient != NULL){
 		
-		EnumChildWindows
-		(
-			hMDIClient,
-			(WNDENUMPROC) EnumChildProc,
-			((g_get_which & SNAPT_SELF)!= 0 )?
-			(LPARAM)NULL:
-			(LPARAM)our_hWnd
-		);
+		if ((g_get_which & SNAPT_OTHERS) != 0){
+			EnumChildWindows(hMDIClient, (WNDENUMPROC)EnumChildProc, (LPARAM)our_hWnd);
+		}
 
 		{
 			RECT rc;
@@ -589,12 +653,27 @@ RECT *	WinRects_GetScreens(void){
 	return g_screens;
 }
 
+BOOL WinRects_IsWorkArea(const RECT * candidate){
+	int index;
+	for (index = 0; index < g_num_snap_rects; ++index){
+		if (candidate == &g_snap_rects[index]){
+			return g_snap_work_areas[index];
+		}
+	}
+	return FALSE;
+}
+
+BOOL WinRects_IsOldPosition(const RECT * candidate){
+	return g_old_position_index >= 0 && g_old_position_index < g_num_rects
+		&& candidate == &g_window_rects[g_old_position_index];
+}
+
 void WinRects_getRects(PTEST_RECTS p_test_rects){
 	p_test_rects->win_rects			=	g_window_rects;
 	p_test_rects->num_win_rects		=	g_num_rects;
 
-	p_test_rects->screens		   = g_screens;
-	p_test_rects->num_screens	   = g_num_screens;
+	p_test_rects->screens		   = g_snap_rects;
+	p_test_rects->num_screens	   = g_num_snap_rects;
 
 	p_test_rects->hcenter_size_rects = g_hcenter_size_rects;
 	p_test_rects->hcenter_move_rects = g_hcenter_move_rects;
@@ -611,6 +690,12 @@ void WinRects_getRects(PTEST_RECTS p_test_rects){
 }
 
 void WinRects_getCurrentScreen( RECT * pRect){
+#ifdef ALLSNAP_TESTING
+	if (g_test_screen_override){
+		*pRect = g_test_current_screen;
+		return;
+	}
+#endif
 	POINT pt;
 	HMONITOR hMonitor;
 	MONITORINFO mi={sizeof(mi)};
@@ -635,3 +720,31 @@ void WinRects_Refresh(DWORD get_which, HWND hWnd){
 
 	RefreshWindows(hWnd);
 }
+
+static BOOL AddMonitorWorkArea(LPCRECT screen, LPCRECT window){
+	if (g_num_screens >= MAX_SCREENS){
+		return FALSE;
+	}
+	AddScreen(screen);
+	AddGrid(screen);
+	if ((g_get_which & (SNAPT_HCENTER | SNAPT_VCENTER)) != 0){
+		AddCenters(screen, window);
+	}
+	return TRUE;
+}
+
+#ifdef ALLSNAP_TESTING
+void WinRects_TestRefreshScreens(const RECT * screens, int count, DWORD get_which, const RECT * window){
+	int index;
+	WinRects_TestSetScreens(NULL, 0, (screens && count > 0) ? &screens[0] : NULL);
+	g_get_which = get_which;
+	if (!screens){
+		return;
+	}
+	for (index = 0; index < count; ++index){
+		if (!AddMonitorWorkArea(&screens[index], window)){
+			break;
+		}
+	}
+}
+#endif

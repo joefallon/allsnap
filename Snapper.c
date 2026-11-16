@@ -10,6 +10,8 @@
 #include "snap_CenterSize.h"
 #include "snap_EqualSize.h"
 #include "snap_mywm_msg.h"
+#include "snap_frame.h"
+#include "snap_keys.h"
 
 
 static int		g_threshold=10;
@@ -80,7 +82,7 @@ void calc_unsnapped_pos(LPCRECT pcurrent_rect,LPRECT pRect){
 
 INLINE BOOL isToggled(void){
 //#ifdef ALLSNAP_TOGGLEMODE
-	return ( (GetAsyncKeyState(getToggleKey())==0) == isDisableToggle());
+	return ( (SnapKeys_IsDown(getToggleKey())==FALSE) == isDisableToggle());
 //#else
 //	return ( GetAsyncKeyState(getToggleKey())==0);
 //#endif
@@ -90,6 +92,7 @@ INLINE BOOL isToggled(void){
 
 void snapper_OnMoving(HWND hWnd, LPRECT pRect)
 {
+	SnapFrame_SetCoordinateWindow(hWnd);
 	TEST_RECTS test_rects;
 	RECT unsnapped_position;
 	SNAP_RESULTS snap_results;
@@ -130,6 +133,7 @@ void snapper_OnMoving(HWND hWnd, LPRECT pRect)
 
 
 void snapper_OnSizing(HWND hWnd, WPARAM which_edge,LPRECT pRect){
+	SnapFrame_SetCoordinateWindow(hWnd);
 	TEST_RECTS test_rects;
 	SNAP_RESULTS snap_results;
     BOOL was_center_sizing = isCentered();
@@ -157,6 +161,7 @@ void snapper_OnSizing(HWND hWnd, WPARAM which_edge,LPRECT pRect){
 		if (was_center_sizing){
 			CenterSize_Adjust(&cropped_rect,v_side,h_side);
 		}
+		Crop_CropSizingFixedEdges(&cropped_rect,v_side,h_side,was_center_sizing);
 
 
 		sizing_test_all(
@@ -275,6 +280,7 @@ void setMovingSnapped(BOOL snapped){
 
 
 void snapper_OnEnterSizeMove(HWND hWnd){
+	SnapFrame_SetCoordinateWindow(hWnd);
 	
 	WinRects_Refresh(getSnapType(),hWnd);
 	setMovingSnapped(FALSE);

@@ -1,25 +1,32 @@
 # allSnap modernization
 
-Status: draft for discussion. Investigation and documentation only so far; no test harness or runtime repairs have been implemented. Track execution in `implementation-plan.md` and actual repository behavior in `.ai/current-state.md`.
+Status: approved for incremental implementation, beginning with the Microsoft test foundation and confinement coverage. Track execution in `implementation-plan.md` and actual repository behavior in `.ai/current-state.md`.
 
 ## Goal and constraints
 
 Make the existing Windows utility reliable through incremental, tested repairs. Preserve its C implementation, Win32 executable/DLL architecture, working Visual Studio 2022 builds, and established setting names unless a specific change requires otherwise. A rewrite is outside this effort.
 
-Desktop confinement is the user's most important and most reliable feature. Protect its observed behavior before changing snapping, monitor enumeration, or lifecycle code. Do not redefine confinement as locking to one monitor: first characterize the current work-area, cross-monitor, resizing, and oversized-window behavior.
+Desktop confinement is important, but the user explicitly considers its implementation untrusted too. Tests must enforce intended correct behavior, including visible borders, rather than freeze legacy output. Use the union of monitor work areas; internal seams allow transitions, exposed edges respect configured spacing, and unavailable gaps are not valid window-placement regions. Preserve window size during movement. Oversized windows cannot always fit and require an accessible fallback rather than invented full-fit guarantees.
 
 The user's reported gaps and intermittent stops are investigation targets. Source defects do not yet establish their complete causes. Distinguish process exit, a live process with a failed hook, and a live hook with incorrect snapping.
+
+## Acceptance correctness
+
+Acceptance expectations come from the behavior contract, not from copying the current output. A defect must fail its test. Ambiguous semantics must be made explicit before treating a test as a contract; passing component tests do not certify untested UI, hardware, or lifetime behavior. Activation distance includes its boundary (distance <= configured threshold); this is an intentional decision replacing the inherited exclusive comparison.
 
 ## Confirmed requirements
 
 - Add both unit and acceptance tests using the **same testing framework** for Win32 and x64.
+- This is a personal application with one user. Prioritize that workflow without public-release or multi-user infrastructure.
+- Support conventional 100% and HiDPI displays, including negative/staggered monitor layouts. Keep the legacy UI under Windows compatibility scaling; explicit DPI conversions belong in engine geometry. Mixed-DPI transitions and the older home monitor require separate hardware validation.
 - Root `features/*.feature` files are human-readable behavior documentation used when writing acceptance tests. No Gherkin runner, parser, test generation, or executable feature-file format.
 - Keep `.ai/current-state.md` and `implementation-plan.md` current as work progresses. Clearly separate proposed work, implementation, executed validation, and remaining uncertainty.
 - Fix demonstrated defects in small increments, with a regression that fails before the repair and passes afterward where practical.
 - Keep both application architectures working. Replacing the two-process user experience is a later design choice, not a prerequisite for repairs.
 - Add removal of all sound-related functionality to the backlog; do not restore sound notifications as a bug fix.
+- Add one configurable pixel-spacing value (0–1000, default 0). Apply it once between adjacent visible window edges (collapsed spacing) and at desktop work-area edges. Zero means flush edges. Activation thresholds remain separate; center/grid guides are alignment targets without padding.
 
-## Findings that justify initial work
+## Pre-repair findings that justified initial work
 
 | Finding | Source evidence | Proposed response |
 | --- | --- | --- |
@@ -31,9 +38,11 @@ The user's reported gaps and intermittent stops are investigation targets. Sourc
 | Center-candidate arrays have capacity 10, but append guards allow 110. | Arrays and `AddHCenter*`/`AddVCenter*` in `snap_WinRects.c`. | Align bounds with actual storage and test capacity boundaries. This mismatch has not been reproduced as a runtime overflow. |
 | Window geometry uses legacy bounds/cropping. | `snap_Crop.c`, `snap_WinRects.c`, `Snapper.c`. | Investigate visible frame bounds and DPI before changing gap behavior. Invisible resize borders are a hypothesis, not a confirmed diagnosis. |
 
+These describe the original inspection, rather than the repaired source. The first checkpoint implements the hook failure/ownership, guide accounting, validation/capacity, and visible-frame repairs, plus Settings and modifier-key regressions. Native owned-window tests now demonstrate consistent DWM-visible gaps and ordinary/centered resize margins. They do not establish the complete cause of the user's reported gaps or intermittent stops. Executed results and outstanding checks belong in the living implementation plan.
+
 ## Proposed test architecture
 
-Use the **Microsoft Native C++ Unit Test Framework** already installed with this machine's Visual Studio C++ workload. Both x86/x64 libraries, headers, and `vstest.console.exe` were found. This recommendation avoids adding a package manager or test dependency; framework selection remains open for discussion.
+Use the **Microsoft Native C++ Unit Test Framework** already installed with this machine's Visual Studio C++ workload. Both x86/x64 libraries, headers, and `vstest.console.exe` were found. This approved choice avoids adding a package manager or test dependency.
 
 - Keep production `.c` sources compiled as C. Use C++ test files with C linkage declarations to call the same production code.
 - Add one native test project to `ALLSNAPB.sln`, with unit and acceptance suites grouped separately and the same assertions, runner, and reporting.
@@ -59,6 +68,7 @@ Each documented acceptance scenario should have a stable identifier recorded in 
 
 - **Requested: remove all sound functionality.** Remove sound preferences and preview controls, playback code and message thread, sound event messages/callers, persistence mappings, sound-only resources/assets, installer references, and dependencies used only for audio. Inspect shared uses before removing a library. Ignore obsolete sound keys when loading existing INI files; do not require users to discard other preferences. Add tests showing normal snapping/startup/shutdown work without audio. Implement this as a separate increment after the initial test foundation.
 - Consider one launcher/tray UI coordinating x86/x64 helpers after lifecycle ownership is reliable. Both helper architectures remain necessary for the current injected-hook approach.
+- Requested follow-up work: create a root `README.md`, organize source/resource folders, review the unexplained `ALLSNAPB` solution name, and perform an Uncle Bob Clean Code refactoring pass behind the regression suite. These are backlog items, not a reason to mix a large structural change into the current behavior repairs.
 - Installer modernization, UI redesign, alternate snapping engines, broad legacy-code cleanup, and automatic restart/watchdog behavior are outside the initial repair pass.
 
 ## Completion standard

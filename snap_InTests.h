@@ -10,5 +10,8 @@ int InTests_GetClosestScreenToSide(enum SIDE side,LPCRECT pRect, LPRECT pScreen)
 
 void InTests_TestAllCorners(P_CORNER_INFO pci,LPCRECT pRect);
 BOOL InTests_isPtInMonitors(int x, int y);
+BOOL InTests_RectInDesktop(const RECT * rectangle);
+BOOL InTests_FindNearestMove(const RECT * desired, RECT * placement);
+BOOL InTests_FindNearestResize(const RECT * desired, enum SIDE vertical_side, enum SIDE horizontal_side, BOOL centering, RECT * placement);
 
 #endif

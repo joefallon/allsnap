@@ -10,7 +10,9 @@
 #include <commctrl.h>
 #include "snap_tips.h"
 
+#ifndef ALLSNAP_TESTING
 #define COMPILE_MULTIMON_STUBS
+#endif
 #include <Multimon.h>
 
 #include "resource.h"
@@ -22,6 +24,27 @@
 #include "snap_App.h"
 #include "ctxhelp.h"
 #include "snap_ini.h"
+#ifdef ALLSNAP_TESTING
+int SnapSettings_TestMessageBox(HWND hwnd, LPCTSTR text, LPCTSTR title, UINT type);
+#undef MessageBox
+#define MessageBox SnapSettings_TestMessageBox
+
+static INT_PTR (CALLBACK *test_create_property_sheet)(LPCPROPSHEETHEADER);
+void SnapSettings_TestSetSheetCreator(INT_PTR (CALLBACK *creator)(LPCPROPSHEETHEADER)){
+	test_create_property_sheet=creator;
+}
+#endif
+
+static BOOL SaveAppliedSettings(HWND page){
+	if (SaveSettingsToINI()){
+		SetWindowLongPtr(page,DWLP_MSGRESULT,PSNRET_NOERROR);
+		return TRUE;
+	}
+	MessageBox(page,_T("Settings could not be saved. Check that allsnap.ini is writable, then apply again."),
+		_T("allSnap - Settings not saved"),MB_OK|MB_ICONERROR);
+	SetWindowLongPtr(page,DWLP_MSGRESULT,PSNRET_INVALID_NOCHANGEPAGE);
+	return FALSE;
+}
 //#include "snap_lineup.h"
 
 /*====================================================================
@@ -90,10 +113,10 @@ static UINT	thresh_boxes[] = {IDC_WIN_THRESH,IDC_SCREEN_THRESH,0};
 =====================================================================*/
 void	CALLBACK PropSheetCallback(HWND hwndPropSheet, UINT uMsg, LPARAM lParam);
 
-LRESULT CALLBACK PrefsProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK SoundsProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK AdvProc(HWND,UINT,WPARAM,LPARAM);
-LRESULT CALLBACK GridProc(HWND,UINT,WPARAM,LPARAM);
+INT_PTR CALLBACK PrefsProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK SoundsProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK AdvProc(HWND,UINT,WPARAM,LPARAM);
+INT_PTR CALLBACK GridProc(HWND,UINT,WPARAM,LPARAM);
 
 void ValidatePrefs(HWND hDlg);
 
@@ -151,9 +174,12 @@ HWND DoPropertySheet(HWND hwndOwner)
 {
     PROPSHEETPAGE psp[4];
     PROPSHEETHEADER psh;
+    BOOL current_enabled = isEnabled();
 
 	InitCmnCtls();
 	LoadSettingsFromINI();
+	// Opening Settings must not undo an unsaved tray toggle.
+	setEnabled(current_enabled);
 
     psp[0].dwSize = sizeof(PROPSHEETPAGE);
     psp[0].dwFlags = PSP_USETITLE;
@@ -202,6 +228,10 @@ HWND DoPropertySheet(HWND hwndOwner)
     psh.ppsp = (LPCPROPSHEETPAGE) &psp;
     psh.pfnCallback = (PFNPROPSHEETCALLBACK)PropSheetCallback;
 
+#ifdef ALLSNAP_TESTING
+	if (test_create_property_sheet)
+		return (HWND)test_create_property_sheet(&psh);
+#endif
 	return (HWND)PropertySheet(&psh);
 }
  
@@ -274,7 +304,7 @@ void CALLBACK PropSheetCallback(HWND hwndPropSheet, UINT uMsg, LPARAM lParam)
 }
 
 // Mesage handler for Preferences Page.
-LRESULT CALLBACK PrefsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK PrefsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	LPNMHDR lpnmhdr;
 
@@ -295,8 +325,8 @@ LRESULT CALLBACK PrefsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 				{
 				case PSN_APPLY:   //sent when OK or Apply button pressed
 					ApplyPrefs(hDlg);
-					SaveSettingsToINI();
-					break;
+					SaveAppliedSettings(hDlg);
+					return TRUE;
 
 				case PSN_RESET:   //sent when Cancel button pressed
 					break;
@@ -314,7 +344,7 @@ LRESULT CALLBACK PrefsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 	return (FALSE);
 }
 
-LRESULT CALLBACK SoundsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK SoundsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LPNMHDR lpnmhdr;
 	
@@ -336,8 +366,8 @@ LRESULT CALLBACK SoundsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 				case PSN_APPLY:   //sent when OK or Apply button pressed
 					SnapSounds_StopTest();
 					ApplySounds(hDlg);
-					SaveSettingsToINI();
-					break;
+					SaveAppliedSettings(hDlg);
+					return TRUE;
 				case PSN_RESET:   //sent when Cancel button pressed
 					SnapSounds_StopTest();
 					break;
@@ -354,7 +384,7 @@ LRESULT CALLBACK SoundsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 
 	return (FALSE);
 }
-LRESULT CALLBACK AdvProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK AdvProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LPNMHDR lpnmhdr;
 	
@@ -374,8 +404,8 @@ LRESULT CALLBACK AdvProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 				case PSN_APPLY:   //sent when OK or Apply button pressed
 					ApplyAdv(hDlg);
-					SaveSettingsToINI();
-					break;
+					SaveAppliedSettings(hDlg);
+					return TRUE;
 				case PSN_RESET: 
 					break;
 				
@@ -392,7 +422,7 @@ LRESULT CALLBACK AdvProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
-LRESULT CALLBACK GridProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK GridProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LPNMHDR lpnmhdr;
 	
@@ -412,8 +442,8 @@ LRESULT CALLBACK GridProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 				case PSN_APPLY:   //sent when OK or Apply button pressed
 					ApplyGrid(hDlg);
-					SaveSettingsToINI();
-					break;
+					SaveAppliedSettings(hDlg);
+					return TRUE;
 				case PSN_RESET: 
 					break;
 				
@@ -451,14 +481,25 @@ void ValidatePrefs(HWND hDlg){
 
             MessageBox(hDlg,szError,szTitle,MB_OK|MB_ICONEXCLAMATION);
 			Edit_SetSel(GetDlgItem(hDlg,box_id),0,-1L);
-			SetWindowLong(hDlg,DWLP_MSGRESULT,TRUE);
 			SetFocus(GetDlgItem(hDlg,box_id));
+			SetWindowLongPtr(hDlg,DWLP_MSGRESULT,TRUE);
 
 			return;
 		}	
 	}
 
-	SetWindowLong(hDlg,DWLP_MSGRESULT,FALSE);
+	{
+		BOOL valid;
+		UINT spacing = GetDlgItemInt(hDlg,IDC_WINDOW_SPACING,&valid,FALSE);
+		if (!valid || spacing > 1000){
+			MessageBox(hDlg,_T("Enter a spacing from 0 to 1000 pixels."),
+				_T("allSnap - Window spacing"),MB_OK|MB_ICONEXCLAMATION);
+			SetFocus(GetDlgItem(hDlg,IDC_WINDOW_SPACING));
+			SetWindowLongPtr(hDlg,DWLP_MSGRESULT,TRUE);
+			return;
+		}
+	}
+	SetWindowLongPtr(hDlg,DWLP_MSGRESULT,FALSE);
 }
 /*******************************************************************************************
 	INIT functions
@@ -591,6 +632,8 @@ void InitGeneral(HWND hDlg){
 
 	SetDlgItemInt(hDlg,IDC_WIN_THRESH,getWinThresh(),FALSE);
 	SetDlgItemInt(hDlg,IDC_SCREEN_THRESH,getScreenThresh(),FALSE);
+	SetDlgItemInt(hDlg,IDC_WINDOW_SPACING,getWindowSpacing(),FALSE);
+	SendDlgItemMessage(hDlg,IDC_WINDOW_SPACING,EM_SETLIMITTEXT,4,0);
 	
 	Edit_SetSel(GetDlgItem(hDlg,IDC_WIN_THRESH),0,-1);
 	Edit_SetSel(GetDlgItem(hDlg,IDC_SCREEN_THRESH),0,-1);
@@ -670,6 +713,7 @@ BOOL Prefs_OnCommand(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify){
 
 		case IDC_SCREEN_THRESH:
 		case IDC_WIN_THRESH:
+		case IDC_WINDOW_SPACING:
 			changed = (codeNotify == EN_UPDATE);
 			break;
 
@@ -935,6 +979,7 @@ INLINE void ApplyPrefs(HWND hDlg){
 	ApplySnapTo(hDlg);
 	ApplyThresh(hDlg);
 	ApplyToggleKey(hDlg);
+	setWindowSpacing((int)GetDlgItemInt(hDlg,IDC_WINDOW_SPACING,NULL,FALSE));
 	
 }
 

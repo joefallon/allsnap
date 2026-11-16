@@ -17,6 +17,7 @@
 #include "snap_taskbar.h"
 #include "snap_debug.h"
 #include "snap_lineup.h"
+#include "snap_diagnostics.h"
 
 /**************************************************************************
    Global Variables
@@ -99,7 +100,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR     lpCmdLine,
                      int       nCmdShow){
-	MSG msg;
+	MSG msg = {0};
+	BOOL message_result;
 
 	g_hInst = hInstance;
 
@@ -123,15 +125,26 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	}
 
 	g_sounds_thread_id = SnapSounds_BeginThread();
-	SnapHookAll(g_hWnd,g_sounds_thread_id,g_os);
+	if (!SnapHookAll(g_hWnd,g_sounds_thread_id,g_os)){
+		DWORD error = GetLastError();
+		TCHAR error_message[160];
+		SnapDiagnostics_Record(SNAP_DIAG_HOOK_INSTALL,error);
+		wsprintf(error_message,_T("allSnap could not install its window hook (error %lu)."),error);
+		MessageBox(g_hWnd,error_message,_T("allSnap - Startup failed"),MB_OK|MB_ICONERROR);
+		if (g_sounds_thread_id != 0)
+			PostThreadMessage(g_sounds_thread_id,MYWM_CLOSETHREAD,0,0);
+		DestroyWindow(g_hWnd);
+		return 1;
+	}
 
 	InitMyStuff(hInstance);
+	SnapDiagnostics_Record(SNAP_DIAG_HOOK_INSTALL,ERROR_SUCCESS);
 
 
 	//if (!LoadSettingsFromRegistry())
 	// show initial help screen
 
-	while(GetMessage(&msg, NULL, 0x00, 0x00))
+	while((message_result = GetMessage(&msg, NULL, 0x00, 0x00)) > 0)
 	{
 		// If the modeless guy is up and is ready to be destroyed
 		// (PropSheet_GetCurrentPageHwnd returns NULL) then destroy the dialog.
@@ -165,11 +178,18 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		}
 	}
 	
+	if (message_result == -1){
+		SnapDiagnostics_Record(SNAP_DIAG_MESSAGE_LOOP,GetLastError());
+	}
 	PostThreadMessage(g_sounds_thread_id,MYWM_CLOSETHREAD,0,0);
 
 	UnloadMyStuff();
 	//SaveSettingsToINI();
-	SnapUnHookAll();
+	if (!SnapUnHookAll()){
+		SnapDiagnostics_Record(SNAP_DIAG_HOOK_REMOVE,GetLastError());
+	}else{
+		SnapDiagnostics_Record(SNAP_DIAG_HOOK_REMOVE,ERROR_SUCCESS);
+	}
 #ifdef ASNAP_AUTO_LINEUP
 	LINEUP_Cleanup();
 #endif
@@ -180,7 +200,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		g_hMutex = NULL;
 	}*/
 
-	return (int)(msg.wParam);
+	return message_result == -1 ? 1 : (int)msg.wParam;
 }
 
 void InitCmnCtls(void){
@@ -469,6 +489,13 @@ BOOL OnCommand (HWND hWnd, int id, HWND hwndCtl, UINT codeNotify){
 
 				}while(!SnapCanUnHook());// || (msg_ret != IDCANCEL ));
 			}
+			if (!SnapUnHookAll()){
+				DWORD error = GetLastError();
+				SnapDiagnostics_Record(SNAP_DIAG_HOOK_REMOVE,error);
+				MessageBox(hWnd,_T("allSnap could not release its window hook. Try exiting again."),
+					_T("allSnap - Error closing"),MB_OK|MB_ICONERROR);
+				return TRUE;
+			}
 			DeleteTaskbarIcon();
 			SnapSounds_Play(SOUND_UNSNAP);
 			DestroyWindow(hWnd);
@@ -480,6 +507,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) 
 	{	
+		case MYWM_DIAGNOSTIC:
+			if (wParam >= SNAP_DIAG_HOOK_INSTALL && wParam <= SNAP_DIAG_HOOK_REMOVE){
+				SnapDiagnostics_Record((enum SNAP_DIAGNOSTIC_STAGE)wParam,(DWORD)lParam);
+			}
+			return 0;
 
 		/*case MYWM_SNAPSOUND:
 			//ReplyMessage((LRESULT)TRUE);

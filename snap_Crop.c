@@ -8,6 +8,7 @@
 #include "sides.h"
 #include "snap_MultiSz.h"
 #include "snap_WinRects.h"
+#include "snap_frame.h"
 
 #define MAX_SKINNEDAPP_CLASSNAME_SIZE 20
 #define num_skinnedAppClasses 7
@@ -22,7 +23,7 @@ void UnCropSideResults(PCROP_INFO p_crop,SIDE_SNAP_RESULTS * p_ssnap);
 void CropTop(HWND hwnd,PCROP_INFO p_crop,LPRECT pTempRect);
 void CropRgn(HWND hwnd,PCROP_INFO p_crop,LPRECT pTempRect);
 
-isTopCroppable(HWND hwnd){
+BOOL isTopCroppable(HWND hwnd){
 	return (!IsSkinnedAppClass(hwnd) && isCroppingTop());
 }
 
@@ -37,9 +38,8 @@ LPCRECT Crop_GetPUncroppedRect(PCROP_INFO p_crop){
 void CropTop(HWND hWnd,PCROP_INFO p_crop,LPRECT pTempRect){
 	int cropAmount = getCropTop();
 
-	if (p_crop->has_rgn){
-        cropAmount -= p_crop->rcRgn.top;
-	}
+	/* Manual top crop is an absolute minimum, not extra padding after frame cropping. */
+	cropAmount -= pTempRect->top - p_crop->uncropped_rect.top;
 	if (isTopCroppable(hWnd)){
 		if (cropAmount > 0){
 			p_crop->cropping_top = TRUE;
@@ -91,6 +91,15 @@ void Crop_LoadMovingCropInfo(PCROP_INFO p_crop,HWND hWnd,LPCRECT pRect){
 
 	//THIS MUST HAPPEN FIRST (maybe only/all windows with rgns don't need croptop)
 	CropRgn(hWnd,p_crop,&temp_rect);
+	{
+		RECT offsets;
+		if (SnapFrame_GetInsets(hWnd,pRect,&offsets)){
+			temp_rect.left = max(temp_rect.left,pRect->left + offsets.left);
+			temp_rect.top = max(temp_rect.top,pRect->top + offsets.top);
+			temp_rect.right = min(temp_rect.right,pRect->right + offsets.right);
+			temp_rect.bottom = min(temp_rect.bottom,pRect->bottom + offsets.bottom);
+		}
+	}
 	CropTop(hWnd,p_crop,&temp_rect);
 
 	p_crop->cropped_rect = temp_rect;
@@ -124,41 +133,44 @@ void Crop_CropSizingRect(
 	*p_cropped_rect = temp_rect;
 }
 
-
-void Crop_LoadSizingInfo(HWND hwnd){
-	DBG_MSG(g_hWnd_app,DBGMSG_INITSIZINGCROP);
-	g_sizing_crop_info.has_rgn = FALSE;
-	g_sizing_crop_info.offsets.top    = 0;
-	g_sizing_crop_info.offsets.left   = 0;
-	g_sizing_crop_info.offsets.bottom = 0;
-	g_sizing_crop_info.offsets.right  = 0;
-
-	if (isCroppingRgn()){
-		RECT plain_rect = {0};
-		RECT rcRgn = {0};
-		int height,width;
-
-		GetWindowRect(hwnd,&plain_rect);	
-		g_sizing_crop_info.has_rgn = WinRects_GetRgnBox(hwnd,&rcRgn);
-		
-		height = plain_rect.bottom - plain_rect.top;
-		width = plain_rect.right - plain_rect.left;
-
-		if (g_sizing_crop_info.has_rgn){
-			g_sizing_crop_info.offsets.top = rcRgn.top;
-			g_sizing_crop_info.offsets.left = rcRgn.left;
-			g_sizing_crop_info.offsets.bottom = height - rcRgn.bottom;
-			g_sizing_crop_info.offsets.right = width - rcRgn.right;
-
-			DBG_MSG_PRECT(g_hWnd_app,DBGMSG_ADJUST_HRGN,&g_sizing_crop_info.offsets);
-
-		}
-	}
-	else{
-		g_sizing_crop_info.has_rgn = FALSE;
+void Crop_CropSizingFixedEdges(RECT * rectangle, enum SIDE vertical_side, enum SIDE horizontal_side, BOOL centering){
+	enum SIDE sides[4] = {SIDE_LEFT,SIDE_RIGHT,SIDE_TOP,SIDE_BOTTOM};
+	int index;
+	if (!g_sizing_crop_info.has_rgn) return;
+	for (index = 0; index < 4; ++index){
+		enum SIDE side = sides[index];
+		enum SIDE opposite = OppositeSide(side);
+		int offset = GetSideOfRect(side,&g_sizing_crop_info.offsets);
+		if (side == vertical_side || side == horizontal_side) continue;
+		/* Full-rectangle confinement needs visible fixed edges too. For a
+		   centered opposite edge, CenterSize_Adjust has already reflected the
+		   dragged inset around the outer center: add BOTH signed offsets to
+		   match final uncrop followed by outer-center reflection. */
+		if (centering && (opposite == vertical_side || opposite == horizontal_side))
+			offset += GetSideOfRect(opposite,&g_sizing_crop_info.offsets);
+		SetSideOfRect(side,GetSideOfRect(side,rectangle)+offset,rectangle);
 	}
 }
 
+
+void Crop_LoadSizingInfo(HWND hwnd){
+	RECT outer;
+	CROP_INFO crop;
+	g_sizing_crop_info.has_rgn = FALSE;
+	SetRectEmpty(&g_sizing_crop_info.offsets);
+	if (!GetWindowRect(hwnd,&outer)){
+		return;
+	}
+	/* Moving and resizing must use the same visible bounds and signed offsets. */
+	Crop_LoadMovingCropInfo(&crop,hwnd,&outer);
+	g_sizing_crop_info.offsets.left = crop.cropped_rect.left - outer.left;
+	g_sizing_crop_info.offsets.top = crop.cropped_rect.top - outer.top;
+	g_sizing_crop_info.offsets.right = crop.cropped_rect.right - outer.right;
+	g_sizing_crop_info.offsets.bottom = crop.cropped_rect.bottom - outer.bottom;
+	g_sizing_crop_info.has_rgn = g_sizing_crop_info.offsets.left != 0
+		|| g_sizing_crop_info.offsets.top != 0 || g_sizing_crop_info.offsets.right != 0
+		|| g_sizing_crop_info.offsets.bottom != 0;
+}
 void UnCropSizingSideResults(SIDE_SNAP_RESULTS * p_ssnap){
 	enum SIDE side = p_ssnap->side;
 
@@ -188,10 +200,9 @@ void UnCropSideResults(PCROP_INFO p_crop,SIDE_SNAP_RESULTS * p_ssnap){
 
 
 void Crop_UnCropMovingResults(PCROP_INFO p_crop,SNAP_RESULTS * p_snap){
-	if ((p_crop->cropping_top) || p_crop->has_rgn){
-        UnCropSideResults(p_crop,&(p_snap->h));
-		UnCropSideResults(p_crop,&(p_snap->v));
-	}
+	/* A zero offset is a no-op; DWM frame adjustments also require conversion. */
+	UnCropSideResults(p_crop,&(p_snap->h));
+	UnCropSideResults(p_crop,&(p_snap->v));
 }
 
 void CropToRgn( LPCRECT pRgnBox, LPRECT pRect){
@@ -213,9 +224,11 @@ void CropToRgn( LPCRECT pRgnBox, LPRECT pRect){
 }
 
 BOOL IsSkinnedAppClass(HWND our_hWnd){
-	TCHAR pszClassName[MAX_CLASSNAME_LENGTH];
+	TCHAR pszClassName[MAX_CLASSNAME_LENGTH] = {0};
 
-	GetClassName(our_hWnd,pszClassName,MAX_CLASSNAME_LENGTH);
+	if (!GetClassName(our_hWnd,pszClassName,MAX_CLASSNAME_LENGTH)){
+		return FALSE;
+	}
 
 	return is_name_in_classlist(pszClassName,getSkinnedClasses());	
 	/*for (i=0;i<num_skinnedAppClasses;i++){

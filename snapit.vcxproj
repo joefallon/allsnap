@@ -76,6 +76,7 @@
     <ClCompile Include="Sides.c" />
     <ClCompile Include="snap_App.c" />
     <ClCompile Include="snap_debug.c" />
+    <ClCompile Include="snap_diagnostics.c" />
     <ClCompile Include="snap_grid.c" />
     <ClCompile Include="snap_ini.c" />
     <ClCompile Include="snap_registry.c" />

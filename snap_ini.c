@@ -14,6 +14,16 @@
 TCHAR INI_NAME[] = _T("allsnap.ini");
 TCHAR INI_PATH[MAX_PATH];
 TCHAR INI_SECTION[]             = _T("settings");
+#ifdef ALLSNAP_TESTING
+static BOOL g_test_ini_path = FALSE;
+static TCHAR g_test_ini_filename[MAX_PATH];
+void SnapIni_TestSetPath(LPCTSTR path){
+	g_test_ini_path = path != NULL;
+	if (path){
+		lstrcpyn(g_test_ini_filename,path,MAX_PATH);
+	}
+}
+#endif
 #define MAX_STRING_SIZE 8000
 
 #define BEGIN_SREG_MAP() REG_ITEM ini_items[] = {
@@ -56,6 +66,8 @@ typedef struct REGITEMTAG {
 // Table of all registry entries with type and setter/getter function pointers
 // macro expands to a empty terminated list of structs
 BEGIN_SREG_MAP()
+	SREG_ENTRY(REGT_BOOL, setEnabled, isEnabled, "enabled")
+	SREG_ENTRY(REGT_INT, setWindowSpacing, getWindowSpacing, "window_spacing")
 	SREG_ENTRY(REGT_INT,	setWinThresh,			getWinThresh,		"win_tresh")
 	SREG_ENTRY(REGT_INT,	setScreenThresh,		getScreenThresh,	"screen_tresh")	
 	SREG_ENTRY(REGT_UINT,	setSnapType,			getSnapType,		"snap_type")
@@ -77,10 +89,10 @@ BEGIN_SREG_MAP()
 	SREG_ENTRY(REGT_BOOL,	setCroppingRgn,			isCroppingRgn,		"cropping_rgn")
 	SREG_ENTRY(REGT_BOOL,	setHGridEnabled,		isHGridEnabled,		"hgridenabled")
 	SREG_ENTRY(REGT_INT,	setHGridType,			getHGridType,		"hgridtype")
-	SREG_ENTRY(REGT_BOOL,	setHGridVal,			getHGridVal,		"hgridval")
+	SREG_ENTRY(REGT_INT,	setHGridVal,			getHGridVal,		"hgridval")
 	SREG_ENTRY(REGT_BOOL,	setVGridEnabled,		isVGridEnabled,		"vgridenabled")
 	SREG_ENTRY(REGT_INT,	setVGridType,			getVGridType,		"vgridtype")
-	SREG_ENTRY(REGT_BOOL,	setVGridVal,			getVGridVal,		"vgridval")
+	SREG_ENTRY(REGT_INT,	setVGridVal,			getVGridVal,		"vgridval")
 END_SREG_MAP()
 
 
@@ -139,6 +151,11 @@ BOOL setInt(LPCTSTR value_name, int val,LPCTSTR inipath){
 LPCTSTR get_ini_path()
 {
 	static BOOL loaded_it = FALSE;
+#ifdef ALLSNAP_TESTING
+	if (g_test_ini_path){
+		return g_test_ini_filename;
+	}
+#endif
 
 	if(loaded_it){
 		return INI_PATH;

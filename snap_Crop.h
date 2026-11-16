@@ -15,6 +15,7 @@ typedef struct CROP_SIZING_INFO_TAG{
 }CROP_SIZING_INFO, * PCROP_SIZING_INFO;
 
 void Crop_LoadSizingInfo(HWND hwnd);
+void Crop_CropSizingFixedEdges(RECT * rectangle, enum SIDE vertical_side, enum SIDE horizontal_side, BOOL centering);
 
 void Crop_LoadMovingCropInfo(PCROP_INFO p_crp,HWND hWnd,LPCRECT pRect);
 

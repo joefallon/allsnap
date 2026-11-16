@@ -4,6 +4,7 @@
 #include "snap_CornerInfo.h"
 #include "snap_InTests.h"
 #include "snap_lib_internal.h"
+#include "snap_keys.h"
 #include <crtdbg.h>
 
 #define MY_MIN_WIN_HEIGHT (16)
@@ -14,7 +15,7 @@ static int   g_x_center_at_start = 0;
 static int   g_y_center_at_start = 0;
 
 BOOL isCentered(void){
-	return (GetAsyncKeyState(getCenterKey())!=0);
+	return SnapKeys_IsDown(getCenterKey());
 }
 
 void CenterSize_Adjust(RECT * p_init_rect,enum SIDE v_side,enum SIDE h_side){

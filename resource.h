@@ -188,6 +188,7 @@
 #define IDC_CHECK2                      1101
 #define IDC_V_PIXELS_BTWN               1102
 #define IDC_V_PIXELS_FROM_LEFT          1103
+#define IDC_WINDOW_SPACING              1104
 #define IDM_SETTINGS                    32772
 #define Enabled                         32773
 #define IDS_ENABLED_TIP                 32774

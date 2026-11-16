@@ -46,6 +46,7 @@ typedef struct TEST_INFO_TAG{
 	BOOL			snap_insides;
 	ResultStack *	p_h_rstck;
 	ResultStack *	p_v_rstck;
+	BOOL work_area_target;
 }TEST_INFO;
 
 #endif
