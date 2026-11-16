@@ -7,9 +7,6 @@
 #include "snap_keys.h"
 #include <crtdbg.h>
 
-#define MY_MIN_WIN_HEIGHT (16)
-#define MY_MIN_WIN_WIDTH  (8)
-
 //globals to remeber middle of win at start of sizing
 static int   g_x_center_at_start = 0;
 static int   g_y_center_at_start = 0;

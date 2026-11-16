@@ -1,7 +1,7 @@
-//snap_registry.c
+//snap_ini.c
 //Ivan Heckman (c) 2002
 //
-// handles saving/loading settings from the registry.
+// Handles saving/loading settings from the INI file.
 
 #include "stdafx.h"
 #include "snap_registry.h"
@@ -59,13 +59,13 @@ typedef struct REGITEMTAG {
 	REGTYPE	rt;	//type of the item
 	PFV_GET pfv_setter;	//void pointer to setter function
 	PFV_SET pfv_getter; //void pointer to getter function
-	LPCTSTR value_name; //value name used in registry.
+	LPCTSTR value_name; //INI key name.
 }REG_ITEM;
 
 
 
-// Table of all registry entries with type and setter/getter function pointers
-// macro expands to a empty terminated list of structs
+// Table of INI entries with type and setter/getter function pointers.
+// The macros append a REGT_EMPTY sentinel.
 BEGIN_SREG_MAP()
 	SREG_ENTRY(REGT_BOOL, setEnabled, isEnabled, "enabled")
 	SREG_ENTRY(REGT_INT, setWindowSpacing, getWindowSpacing, "window_spacing")
@@ -94,43 +94,34 @@ BEGIN_SREG_MAP()
 END_SREG_MAP()
 
 
-BOOL setVal(LPCTSTR value_name,
-			DWORD dwValType,
-			LPBYTE lpbData,
-			DWORD dwSize,
-			LPCTSTR inipath
-			);
-
-BOOL INIsetStringVal(LPCTSTR value_name,LPCTSTR szString,LPCTSTR inipath);
-
-BOOL INIgetStringVal(LPCTSTR value_name,TCHAR * string,int * p_ret_len,int max_len,LPCTSTR inipath);
-
-
-BOOL getInt(LPCTSTR value_name,int * p_int,LPCTSTR inipath){
-	TCHAR buffer[64], * end, * prefix;
+static BOOL ParseIntegerValue(LPCTSTR text,int * p_int){
+	TCHAR * end;
+	LPCTSTR prefix;
 	long value;
 	int base = 10;
-	DWORD length = GetPrivateProfileString(INI_SECTION,value_name,NULL,buffer,chDIMOF(buffer),inipath);
-	if (length == 0 || length >= chDIMOF(buffer)-1) return FALSE;
-	prefix = buffer;
+	prefix = text;
 	while (_istspace((unsigned short)*prefix)) ++prefix;
 	if (*prefix == _T('+') || *prefix == _T('-')) ++prefix;
 	/* Preserve legacy 0x values without interpreting leading-zero decimals as octal. */
 	if (prefix[0] == _T('0') && (prefix[1] == _T('x') || prefix[1] == _T('X'))) base = 16;
 	errno = 0;
-	value = _tcstol(buffer,&end,base);
-	if (end == buffer || errno == ERANGE || value < INT_MIN || value > INT_MAX) return FALSE;
+	value = _tcstol(text,&end,base);
+	if (end == text || errno == ERANGE || value < INT_MIN || value > INT_MAX) return FALSE;
 	while (_istspace((unsigned short)*end)) ++end;
 	if (*end != 0) return FALSE;
 	*p_int = (int)value;
 	return TRUE;
 }
 
+BOOL getInt(LPCTSTR value_name,int * p_int,LPCTSTR inipath){
+	TCHAR buffer[64];
+	DWORD length = GetPrivateProfileString(INI_SECTION,value_name,NULL,buffer,chDIMOF(buffer),inipath);
+	if (length == 0 || length >= chDIMOF(buffer)-1) return FALSE;
+	return ParseIntegerValue(buffer,p_int);
+}
+
 
 BOOL INIgetStringVal(LPCTSTR value_name,TCHAR * string,int * p_ret_len,int max_len,LPCTSTR inipath){
-	BOOL fOK = FALSE;
-	int returned_length=0;
-
 	int result;
 	result = GetPrivateProfileString(INI_SECTION,value_name,NULL,string,max_len,inipath);
 	*p_ret_len = result;
@@ -159,6 +150,8 @@ BOOL setInt(LPCTSTR value_name, int val,LPCTSTR inipath){
 LPCTSTR get_ini_path()
 {
 	static BOOL loaded_it = FALSE;
+	TCHAR workdir[MAX_PATH];
+	int dirlen;
 #ifdef ALLSNAP_TESTING
 	if (g_test_ini_path){
 		return g_test_ini_filename;
@@ -168,17 +161,13 @@ LPCTSTR get_ini_path()
 	if(loaded_it){
 		return INI_PATH;
 	}
-	else{
-
-		TCHAR workdir[MAX_PATH];
-		int dirlen = GetCurrentDirectory(MAX_PATH,workdir);
-		if (!dirlen || (int)(dirlen + chDIMOF(INI_NAME) + 2) > MAX_PATH ){
-			return 0;
-		}
-		wsprintf(INI_PATH,_T("%s\\%s"),workdir,INI_NAME);
-		loaded_it = TRUE;
-		return INI_PATH;
+	dirlen = GetCurrentDirectory(MAX_PATH,workdir);
+	if (!dirlen || (int)(dirlen + chDIMOF(INI_NAME) + 2) > MAX_PATH ){
+		return 0;
 	}
+	wsprintf(INI_PATH,_T("%s\\%s"),workdir,INI_NAME);
+	loaded_it = TRUE;
+	return INI_PATH;
 }
 
 /* FALSE stops traversal for an unsupported type; missing/invalid values are skipped. */

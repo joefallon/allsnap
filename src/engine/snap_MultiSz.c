@@ -30,7 +30,7 @@ void setMultiSz(TCHAR * p_target,TCHAR * p_source,int max_item_length,int max_to
 }
 
 BOOL isStrInMulti(LPCTSTR str, TCHAR * multi_sz){
-	for(multi_sz; *multi_sz; multi_sz += lstrlen(multi_sz)+1){
+	for(; *multi_sz; multi_sz += lstrlen(multi_sz)+1){
 		if ((lstrcmp(str,multi_sz)==0)){
 			return TRUE;
 		}

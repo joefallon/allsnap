@@ -17,13 +17,6 @@
 
 #define IS_ZERO_SIZE_WINDOW(pRect)( ((pRect)->top==(pRect)->bottom) || ((pRect)->right==(pRect)->left))
 
-#define IS_CLIPPED_CHILD(hwnd)((GetWindowLong((hwnd),GWL_STYLE) & WS_CHILD)\
-								&& ( GetParent(hwnd) != NULL)\
-								&& ( (GetWindowLong(GetParent(hwnd),GWL_STYLE) & WS_CLIPCHILDREN)))
-
-#define IS_WITHIN(x,min,max)( ((x)>=min) && ((x)<=max))
-#define IS_WITHIN_X(x,min,max)( ((x)>min) && ((x)<max))
-
 RECT g_window_rects[MAX_RECTS];
 RECT g_screens[MAX_SCREENS];
 static RECT g_snap_rects[MAX_SCREEN_GRID];
@@ -42,11 +35,6 @@ static int g_num_hcenter_move_rects;
 static int g_num_vcenter_move_rects;
 static int g_num_hcenter_size_rects;
 static int g_num_vcenter_size_rects;
-
-static BOOL g_isFirstTime_windows;
-static BOOL g_isFirstTime_screens;
-
-static BOOL g_gotScreensAlready=FALSE;
 
 #ifdef ALLSNAP_TESTING
 static RECT g_test_current_screen;
@@ -96,18 +84,6 @@ void WinRects_TestSetWindows(const RECT * windows, int count){
 
 #define MAX_NAME_LENGTH 20
 
-/*
-#define NUM_SMALL_MAXIMIZED 2
-static TCHAR *g_small_maximized[] = { _T("ConsoleWindowClass"), //2k console
-									_T("tty")				  //9x console
-};
-#define NUM_IGNORED_CLASSES 3						
-static TCHAR *g_ignoredClasses[]={	_T("Progman"),			//entire screen (just want work area)
-									_T("Shell_TrayWnd"),	//task bar
-									_T("IDEOwner")};		//invisible window in VS.net that isWindowVisible
-															//there might be more like this one.
-*/
-
 typedef struct GETWINRECTS_STATE_TAG{
 	HWND	my_window;
 	DWORD	get_which;
@@ -132,7 +108,6 @@ void AddScreen(LPCRECT p_rc);
 
 
 void InitGetWinRectsState(getwinrects_state_t * p_state,DWORD get_which,HWND my_window);
-//BOOL isPtInMonitors(POINT pt);
 BOOL IsIgnoredClass(HWND our_hWnd);
 static BOOL isIncludedDestination(HWND hWnd, HWND our_hwnd);
 BOOL isIncludedWindow(HWND hWnd, HWND our_hwnd);
@@ -144,12 +119,6 @@ BOOL isClassNameInArray(HWND hWnd,int array_length,LPCTSTR name_array[]);
 BOOL GetValidWinRect(HWND hWnd, LPRECT rect);
 void GetCenteredSlice(BOOL isVertical, LPCRECT centerer_rect, LPRECT centeree_rect);
 
-/*
-BOOL CALLBACK EnumWindowsProc(
-  HWND hWnd,      // handle to parent window
-  LPARAM lParam   // application-defined value
-  );
-*/
 BOOL CALLBACK EnumChildProc(
   HWND hWnd,      // handle to child window
   LPARAM lParam   // application-defined value
@@ -488,9 +457,6 @@ BOOL isFullMaximized(HWND hwnd,CROP_INFO * pci){
 			&& 	(dl>0)
 			&&	!pci->has_rgn);
 
-//	RECT place_holder;
-//	return isClassNameInArray(hwnd,NUM_SMALL_MAXIMIZED,g_small_maximized) ||
-//		WinRects_GetRgnBox(hwnd,&place_holder);
 			
 }
 
@@ -538,19 +504,16 @@ BOOL WinRects_GetRgnBox(HWND hWnd, LPRECT pRgnBox){
 
 BOOL GetValidWinRect(HWND hWnd, LPRECT pRect){
 	RECT rc;
+	CROP_INFO crop_info;
 	
 	if (!GetWindowRect(hWnd,&rc)){
 		return FALSE;
 	}
-	else{
-		CROP_INFO crop_info;
-	
-		Crop_LoadMovingCropInfo(&crop_info,hWnd,&rc);
+	Crop_LoadMovingCropInfo(&crop_info,hWnd,&rc);
 
-		*pRect = crop_info.cropped_rect;
+	*pRect = crop_info.cropped_rect;
 
-		return isIncludedRect(hWnd,&crop_info);
-	}
+	return isIncludedRect(hWnd,&crop_info);
 }
 
 BOOL CALLBACK EnumWindowsProc(
@@ -574,7 +537,6 @@ BOOL CALLBACK EnumWindowsProc(
 			if (is_valid && !is_covered){
 				g_window_rects[g_num_rects++] = new_rect;
 			}
-			//return EnumChildWindows(hWnd,(WNDENUMPROC)EnumChildProc,lParam);
 		}
 		return TRUE;
 	}
@@ -736,7 +698,6 @@ void WinRects_getScreenFromPt(POINT pt, RECT * pRect){
 }
 
 void WinRects_Refresh(DWORD get_which, HWND hWnd){
-	g_isFirstTime_windows = TRUE;
 	g_get_which = get_which;
 
 	RefreshWindows(hWnd);

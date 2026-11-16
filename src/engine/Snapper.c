@@ -13,25 +13,20 @@
 #include "snap_keys.h"
 
 
-static int		g_threshold=10;
 BOOL	g_movingSnapped = FALSE;
 BOOL	g_sizingSnapped = FALSE;
 BOOL	g_justStarted = TRUE;
 
 
 
-static int   g_fast_speed = 10;
 static int   g_x_offset_at_snap = 0;
 static int   g_y_offset_at_snap = 0;
-static RECT	 g_rect_at_snap={0,0,0,0};
-static POINT g_cursor_at_snap={0,0};
 
 
 //forward declarations
 
 void capture_state_at_snap (LPCRECT p_unsnapped);
 void calc_unsnapped_pos(LPCRECT pcurrent_rect, LPRECT pRect);
-void DoMovingOrSizing(HWND hWnd, WPARAM which_edge,LPRECT pRect,BOOL is_sizing);
 BOOL isToggled(void);
 void reposition(LPCRECT p_unsnapped, SNAP_RESULTS * p_snap, LPRECT pRect);
 void resize(SNAP_RESULTS * p_snap, LPRECT pRect);
@@ -44,7 +39,6 @@ void capture_state_at_snap (LPCRECT p_unsnapped)
 	POINT cursor_at_snap;
 	GetCursorPos(&cursor_at_snap);	
 	
-	g_cursor_at_snap = cursor_at_snap;
 	g_x_offset_at_snap	= p_unsnapped->left - cursor_at_snap.x;
 	g_y_offset_at_snap	= p_unsnapped->top  - cursor_at_snap.y;
 }
@@ -80,11 +74,7 @@ void calc_unsnapped_pos(LPCRECT pcurrent_rect,LPRECT pRect){
 }
 
 INLINE BOOL isToggled(void){
-//#ifdef ALLSNAP_TOGGLEMODE
 	return ( (SnapKeys_IsDown(getToggleKey())==FALSE) == isDisableToggle());
-//#else
-//	return ( GetAsyncKeyState(getToggleKey())==0);
-//#endif
 }
 
 
@@ -125,7 +115,6 @@ void snapper_OnMoving(HWND hWnd, LPRECT pRect)
 	
 	TrackRslts_Track(&snap_results);
 
-	//DBG_MSG(g_hWnd_app,DBGMSG_MOVING_END);
 }
 
 
@@ -141,7 +130,6 @@ void snapper_OnSizing(HWND hWnd, WPARAM which_edge,LPRECT pRect){
 
 	if (isToggled()){
 		RECT cropped_rect;
-		//RECT alt_sizing_pos;
 
 		enum SIDE v_side = SIDE_NONE;
 		enum SIDE h_side = SIDE_NONE;
@@ -199,7 +187,6 @@ void snapper_OnSizing(HWND hWnd, WPARAM which_edge,LPRECT pRect){
 	}
 
 	TrackRslts_Track(&snap_results);
-	//DBG_MSG(g_hWnd_app,DBGMSG_SIZING_END);
 }
 
 
@@ -287,33 +274,3 @@ void snapper_OnEnterSizeMove(HWND hWnd){
 
 	TrackRslts_Reset();
 }
-/*
-void snapper_OnWindowPosChanging(HWND hWnd, LPWINDOWPOS pWindowPos){
-	if (! (pWindowPos->flags & SWP_NOMOVE)){
-		RECT rc;
-		
-		int width  = rc.right  - rc.left;
-		int height = rc.bottom - rc.top;
-
-		rc.left  = pWindowPos->x;
-		rc.right = pWindowPos->x + width;
-
-		rc.top    = pWindowPos->y;
-		rc.bottom = pWindowPos->y + height; 
-
-		GetWindowRect(hWnd,&rc);    //does this have the current position?
-		snapper_OnMoving(hWnd,&rc);
-		
-		pWindowPos->x = rc.left;
-		pWindowPos->y = rc.top;
-	}
-	else if ( ! ( (pWindowPos->flags) & SWP_NOSIZE)){
-		RECT rc;
-		WPARAM allEdges = (WMSZ_TOPRIGHT | WMSZ_BOTTOMLEFT);
-		GetWindowRect(hWnd,&rc);
-		snapper_OnSizing(hWnd,allEdges,&rc);
-
-		pWindowPos->cx = rc.right - rc.left;
-		pWindowPos->cy = rc.bottom - rc.top;
-	}
-}*/

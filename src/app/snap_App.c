@@ -34,7 +34,6 @@ HANDLE			g_hiPaypal;
 OSVERSIONINFO	g_os;
 BOOL g_isXP;
 HWND			g_hwndAbout = NULL;
-//HPEN g_hBluePen;//blue pen
 
 
 UINT			g_version = 0x013100;
@@ -131,8 +130,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	SnapDiagnostics_Record(SNAP_DIAG_HOOK_INSTALL,ERROR_SUCCESS);
 
 
-	//if (!LoadSettingsFromRegistry())
-	// show initial help screen
 
 	while((message_result = GetMessage(&msg, NULL, 0x00, 0x00)) > 0)
 	{
@@ -173,7 +170,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	}
 
 	UnloadMyStuff();
-	//SaveSettingsToINI();
 	if (!SnapUnHookAll()){
 		SnapDiagnostics_Record(SNAP_DIAG_HOOK_REMOVE,GetLastError());
 	}else{
@@ -182,12 +178,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 #ifdef ASNAP_AUTO_LINEUP
 	LINEUP_Cleanup();
 #endif
-	/*	let OS remove mutex
-	if (g_hMutex != NULL){
-		ReleaseMutex(g_hMutex);
-		CloseHandle(g_hMutex);
-		g_hMutex = NULL;
-	}*/
+	/* Let the OS remove the instance mutex on process exit. */
 
 	return message_result == -1 ? 1 : (int)msg.wParam;
 }
@@ -370,7 +361,6 @@ BOOL InitMyStuff(HINSTANCE hInstance){
 
 	LoadSettingsFromINI();
 
-	//setEnabled(getSnapType() != SNAPT_NONE);
 
 	RegisterTaskbarCreatedMsg();
 	AddTaskbarIcon();
@@ -383,23 +373,15 @@ BOOL InitMyStuff(HINSTANCE hInstance){
 BOOL UnloadMyStuff(void){
 	DeleteObject(g_hcHand);
 	DeleteObject(g_hiPaypal);
-	//SaveSettingsToINI();
-/*
-	if (!SaveSettingsToRegistry()){
-			MY_MB(_T("Didn't Save Settings"));
-			return FALSE;
-	}*/
 	return TRUE;
 }
 
 void OnNotifyIcon(HWND hWnd, UINT uID, UINT event){
-	static BOOL is_down;
 
 	switch(event){
 		case WM_LBUTTONDBLCLK:
 			SendMessage(hWnd,WM_COMMAND,MAKEWPARAM(IDM_SETTINGS,0),0);
 			break;
-//		case WM_CONTEXTMENU:
 		case WM_RBUTTONUP:
 			ContextMenu(hWnd);			
 			break;
@@ -433,7 +415,6 @@ BOOL OnCommand (HWND hWnd, int id, HWND hwndCtl, UINT codeNotify){
 			if (!IsWindow(g_hwndDebug)){
 				g_hwndDebug = CreateDialog(g_hInst,MAKEINTRESOURCE(IDD_DEBUG),NULL,DebugProc);
 				ShowWindow(g_hwndDebug,SW_SHOW);
-			//DialogBox(g_hInst, MAKEINTRESOURCE(IDD_Debug), NULL, DebugProc);
 			}
 			else{
 				SetForegroundWindow(g_hwndDebug);
@@ -446,7 +427,6 @@ BOOL OnCommand (HWND hWnd, int id, HWND hwndCtl, UINT codeNotify){
 				InitCmnCtls();
 				g_hwndAbout = CreateDialog(g_hInst,MAKEINTRESOURCE(IDD_ABOUT),NULL,AboutProc);
 				ShowWindow(g_hwndAbout,SW_SHOW);
-			//DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUT), NULL, AboutProc);
 			}
 			else{
 				SetForegroundWindow(g_hwndAbout);
@@ -472,7 +452,7 @@ BOOL OnCommand (HWND hWnd, int id, HWND hwndCtl, UINT codeNotify){
 						return TRUE;	//cancel closing
 					}
 
-				}while(!SnapCanUnHook());// || (msg_ret != IDCANCEL ));
+				}while(!SnapCanUnHook());
 			}
 			if (!SnapUnHookAll()){
 				DWORD error = GetLastError();
@@ -529,17 +509,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case WM_QUERYENDSESSION:
 		case WM_ENDSESSION:
-			//SaveSettingsToINI();
 			return 1;
 
 		case WM_CLOSE:
-			//SaveSettingsToINI();
 			return 0;
 
 
 
 		case WM_DESTROY:
-			//SaveSettingsToINI();
 			DeleteTaskbarIcon();
 			PostQuitMessage(0);
 			return 0;
@@ -626,7 +603,6 @@ INT_PTR CALLBACK AboutProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam){
 		case WM_CTLCOLOREDIT:
 			// process this message to set EDIT control colors
 			// lParam holds hwnd of individual control to be painted
-		//	SetBkColor ((HDC) wParam, BkColor);
 			SetTextColor ((HDC) wParam, FgColor);
 			return (INT_PTR) hBkBrush;
 
@@ -640,7 +616,6 @@ INT_PTR CALLBACK AboutProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam){
 			// closing dialog
 			DestroyWindow(g_hwndAbout);
 			g_hwndAbout = NULL;
-			//EndDialog(hDlg,TRUE);
 			return TRUE;
 	}
 	return FALSE;
@@ -684,10 +659,6 @@ LRESULT CALLBACK MyButtonProc(
 		case WM_LBUTTONUP:
 			
 			if (LoadString(g_hInst,GetDlgCtrlID(hWnd),szLink,MAX_LOADSTRING)!=0){					
-				//if ((int)ShellExecute(NULL, _T("open"), szLink,
-				//	NULL, NULL, SW_SHOWNORMAL)>SHELLEXECUTE_MAXERROR){
-				//		//EndDialog(GetParent(hWnd),TRUE);
-				//	}
 				ShellExecute(NULL, _T("open"), szLink,NULL, NULL, SW_SHOWNORMAL);
 			}
 

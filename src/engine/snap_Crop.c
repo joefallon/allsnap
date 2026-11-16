@@ -1,8 +1,7 @@
-//snap_CropTop.c
-//fix for certain XP styles that are taller than they look.
+//snap_Crop.c
+// Visible-frame, region, and manual cropping for move/resize geometry.
 
 #include "stdafx.h"
-//#include <uxtheme.h>
 #include "snap_Crop.h"
 #include "snap_lib_internal.h"
 #include "sides.h"
@@ -10,11 +9,7 @@
 #include "snap_WinRects.h"
 #include "snap_frame.h"
 
-#define MAX_SKINNEDAPP_CLASSNAME_SIZE 20
-#define num_skinnedAppClasses 7
-
-//remebers region other cropping info from when the window was first clicked.
-//store here??? no
+// Cropping offsets captured when resizing starts.
 CROP_SIZING_INFO g_sizing_crop_info = {0};
 
 BOOL IsSkinnedAppClass(HWND our_hWnd);
@@ -221,11 +216,4 @@ void CropToRgn( LPCRECT pRgnBox, LPRECT pRect){
 
 BOOL IsSkinnedAppClass(HWND our_hWnd){
 	return is_window_class_in_classlist(our_hWnd,getSkinnedClasses());
-	/*for (i=0;i<num_skinnedAppClasses;i++){
-		if (lstrcmp(pszClassName,skinnedClassList[i])==0){
-			return TRUE;
-		}
-	}
-	
-	return FALSE; */
 }

@@ -35,10 +35,8 @@ BOOL ResultStack_Pop(StackEntry * p_x , ResultStack *s)
 	if (ResultStack_isEmpty(s)){
 		return FALSE;
 	}
-	else {
-		s->count--;
-		*p_x = s->entry[s->front];
-		s->front = (s->front + 1) % MAXENTRIES;
-		return TRUE;
-	}
+	s->count--;
+	*p_x = s->entry[s->front];
+	s->front = (s->front + 1) % MAXENTRIES;
+	return TRUE;
 }

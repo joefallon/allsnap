@@ -22,7 +22,6 @@ HWND			g_hwndDebug = NULL;
 BOOL OnSize(HWND hDlg,int height, int width);
 void Debug_SaveToFile(void);
 BOOL SelectFile(LPTSTR szFileName);
-BOOL CALLBACK ListView(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL	OnDBGContextMenu(HWND hWnd, HWND hwndCtl, UINT x, UINT y);
 
 BOOL OnGetMinMax(HWND hDlg, LPMINMAXINFO pminmax);
@@ -108,15 +107,11 @@ void DebugCopySelectedToClipboard(HWND hlist){
 	else{
 		int i =0;
 		TCHAR sz4[MAX_LOADSTRING + 12];
-		int clip_length = 0;
 
 		clipboard_text[0] = _T('\0');
 
 		for (i = 0;i<num_selected;++i){
-			int text_length = 
-				ListBox_GetText(hlist,selected_items[i],sz4);
-
-			clip_length += text_length;
+			ListBox_GetText(hlist,selected_items[i],sz4);
 
 			lstrcat(
 				clipboard_text,
@@ -126,11 +121,6 @@ void DebugCopySelectedToClipboard(HWND hlist){
 
 		}
 
-#ifdef UNICODE
-#define CF_TCHAR CF_UNICODETEXT
-#else
-#define CF_TCHAR CF_TEXT
-#endif
 		if (OpenClipboard(hlist))
 		{
 			// Empty the Clipboard. This also has the effect
@@ -180,14 +170,12 @@ void DebugCopySelectedToClipboard(HWND hlist){
 
 
 BOOL	OnDBGContextMenu(HWND hWnd, HWND hwndCtl, UINT x, UINT y){
-//	TCHAR pszClassName[100];
 	
 
 		HMENU hContextMenu = GetSubMenu(LoadMenu(g_hInst,  MAKEINTRESOURCE(IDR_COPY)),0);
 
 
 			// Display the menu
-			// GetCursorPos(&pt);
 
 			if (TrackPopupMenu(   hContextMenu,
 				TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD,
@@ -197,14 +185,8 @@ BOOL	OnDBGContextMenu(HWND hWnd, HWND hwndCtl, UINT x, UINT y){
 				hWnd,
 				NULL)){
 					
-					 DebugCopySelectedToClipboard(hWnd);;
+					 DebugCopySelectedToClipboard(hWnd);
 
-					//POINT pt = {(LONG)x,(LONG)y};
-					//HELPINFO hi = {sizeof(HELPINFO)};
-					//hi.dwContextId =  GetWindowContextHelpId(hwndCtl);
-					//hi.iContextType = HELPINFO_WINDOW;
-					//SendMessage(hwnd,WM_HELP,0L,MAKELPARAM(0,HELPINFO));
-					//MB(debug);
 			}
 			return TRUE;
 }
@@ -394,7 +376,6 @@ void Debug_SaveToFile(void){
 }
 
 BOOL SelectFile(LPTSTR szFileName){
-	static BOOL first_time=TRUE;
 	OPENFILENAME ofn;
 
 	ZeroMemory(&ofn, sizeof(ofn));
@@ -424,19 +405,15 @@ void Debug_printMsg(TCHAR * message){
 	if (IsWindow(g_hwndDebug)){
 		TCHAR sz4[MAX_LOADSTRING + 12];
 		HWND hwndMsg= GetDlgItem(g_hwndDebug,IDC_MSGLIST);
-		int position;
 		int lbcount;
 
-	//	wsprintf(sz,_T("%d"),position);
-	//	ListBox_AddString(hwndMsg,sz);
 		//Remove some string if there are too many entries
 		while((lbcount = ListBox_GetCount(hwndMsg)) > MAX_DEBUG_HISTORY )
 			ListBox_DeleteString(hwndMsg,lbcount-1);		
 		++count;
-		//LoadString(g_hInst,DBGMSG_IDS_BASE + wParam,sz,MAX_LOADSTRING);
 
 		wsprintf(sz4,_T("%05u:     %s"),count,message);
-		position = ListBox_InsertString(hwndMsg,0,sz4);
+		ListBox_InsertString(hwndMsg,0,sz4);
 		ListBox_SetCurSel(hwndMsg,0);
 	}
 }

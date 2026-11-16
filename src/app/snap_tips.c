@@ -47,15 +47,6 @@ static DWORD tiptable[]={IDC_STATIC						,0
 ,IDC_CHECK_HORIZONTAL			 ,IDS_CHECK_HORIZONTAL
 ,IDC_CHECK_VERTICAL				,IDS_CHECK_VERTICAL
 
-/*
-,IDC_H_NUM_EVEN ,IDS_H_NUM_EVEN
-,IDC_H_PIXELS_BTWN ,IDS_H_PIXELS_BTWN
-,IDC_H_PIXELS_FROM_TOP,IDS_H_PIXELS_FROM_TOP
-,IDC_V_NUM_EVEN ,IDS_V_NUM_EVEN
-,IDC_V_PIXELS_BTWN ,IDS_V_PIXELS_BTWN
-,IDC_V_PIXELS_FROM_TOP,IDS_V_PIXELS_FROM_TOP
-*/
-
 ,0								 ,0};
 
 
@@ -75,7 +66,7 @@ DWORD mapID(DWORD ctrlid){
 	 return;
 #else
 	HH_POPUP hPop;
-	UINT idString = -1;
+	UINT idString;
 	TCHAR HelpString[MAX_LOADSTRING];
 
 	memset(&hPop, 0, sizeof (HH_POPUP));
@@ -86,22 +77,20 @@ DWORD mapID(DWORD ctrlid){
 	hPop.rcMargins.right = 8;
 	hPop.rcMargins.bottom = 8;
 	hPop.rcMargins.top = 8;
-	hPop.idString = 0;//mapID(GetDlgCtrlID(hwndCtl));
+	hPop.idString = 0;
 	hPop.pszText=_T("No help for this item.");
-	//GetWindowRect(hwndCtl,&rect);
-	hPop.pt.x = -1;//rect.right;
-	hPop.pt.y = -1;//rect.bottom;
+	hPop.pt.x = -1;
+	hPop.pt.y = -1;
 
-	//InvalidateRect(g_hwndPropSheet,NULL,TRUE);
 	idString = mapID(GetDlgCtrlID(hwndCtl));
-	if (idString != 0){  //???? why -1 UINT is unsigned
+	if (idString != 0){
 		LoadString(g_hInst,idString,HelpString,MAX_LOADSTRING);
 		hPop.pszText = HelpString;
 	}
 
 
 	HtmlHelp(hwndCtl,
-			NULL,//_T("allSnap.chm::/ctxhelp.txt"),
+			NULL,
 			HH_DISPLAY_TEXT_POPUP ,
 			(DWORD_PTR)&hPop) ;
 #endif

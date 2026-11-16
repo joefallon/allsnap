@@ -1,6 +1,6 @@
 # allSnap modernization implementation plan
 
-Status: Phase 12 completes focused INI load refactoring after the user committed Phase 11: separate per-setting dispatch from traversal, preserving existing semantics. All eight solution builds pass; independent semantic review is complete. No tests were executed, as test execution was not requested for this increment; the last results remain Phase 7 (286/286 in Debug/Release on Win32/x64). Verification details and limits are recorded under Phase 12 below. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
+Status: Phase 14 completes the surveyed low-risk Clean Code inventory, continuing from the uncommitted Phase 13 parser change. Supervisor and independent cross-review are complete; all eight solution builds pass. No tests were executed under the standing instruction; last results remain Phase 7 (286/286 in Debug/Release on Win32/x64). Remaining candidates involve behavior repairs, larger design choices, or stylistic churn. Verification and boundaries are recorded under Phase 14 below. Keep this living document and `.ai/current-state.md` aligned with actual progress; requirements are in `project-spec.md`.
 
 ## Current position
 
@@ -13,6 +13,8 @@ Status: Phase 12 completes focused INI load refactoring after the user committed
 - Completed in Phase 10: root solution/application project/filter filenames align with the existing `allsnap` project name; references updated without renaming runtime binaries or source symbols.
 - Completed in Phase 11: INI save serialization and traversal have separate responsibilities; goto-based save exits replaced by direct returns, with existing behavior preserved by review.
 - Completed in Phase 12: INI load dispatch and traversal have separate responsibilities; unused load bookkeeping and the registry-named goto removed, with existing behavior preserved by review.
+- Completed in Phase 13: INI numeric parsing extracted from profile reading without changing grammar, bounds, errno behavior, or output assignment.
+- Completed in Phase 14: audited low-risk app/engine cleanup inventory, independently cross-reviewed; remaining behavior-sensitive and larger refactoring work deferred explicitly.
 - Native unit/acceptance tests now cover 286 methods (97 unit, 189 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
 - User handles all commits. Agents do not stage, commit, reset, or amend. Phase boundaries below are review checkpoints, not claims of commits already created.
 
@@ -32,7 +34,9 @@ Status: Phase 12 completes focused INI load refactoring after the user committed
 | 10. Solution/project naming | `allsnap.sln`, `allsnap.vcxproj`, matching filters and active references | Complete and independently reviewed; all eight solution builds, reference/metadata checks, and whitespace checks pass. No tests executed. |
 | 11. Clean Code: INI save path | Separate per-setting serialization from ordered save traversal in one production file | Complete and independently reviewed; all eight builds and whitespace checks pass. Existing tests inspected, not executed; runtime regression verification remains outstanding. |
 | 12. Clean Code: INI load path | Separate per-setting loading from ordered traversal in the same production file | Complete and independently reviewed; all eight builds and whitespace checks pass. Existing tests inspected, not executed; runtime regression verification remains outstanding. |
-| Later backlog phases | Further Clean Code refactoring | INI save/load increments complete; keep subsequent changes bounded and separate from behavior repairs. |
+| 13. Clean Code: INI numeric parsing | Separate text conversion from the existing profile read/length guard | Complete and independently reviewed; all eight builds and whitespace checks pass. Existing tests inspected, not executed. |
+| 14. Clean Code: remaining low-risk inventory | Unused private state/declarations/locals, obsolete commented code, equivalent guards/returns, shared page setup | Complete and cross-reviewed; all eight builds and whitespace checks pass. Tests not executed. |
+| Later backlog phases | Deeper Clean Code refactoring and behavior repairs | Surveyed easy cleanup complete; remaining candidates require separate design/behavior decisions and regression verification. |
 ## Execution sequence
 
 ### 1. Establish the test foundation and protect confinement
@@ -83,7 +87,7 @@ Verification: unit/acceptance results on both architectures plus native test-own
 
 ## Backlog
 
-The canonical list is [`.ai/backlog.md`](../../backlog.md), with stable item IDs and separate requested/proposed work. Next priorities are B-001 (actual desktop/process-lifetime verification) and B-002 (remaining Settings coverage). Audio removal, the README, folder organization, naming cleanup, and the INI save/load Clean Code increments are complete. B-007 remains open for further bounded refactoring milestones. A single launcher/tray is proposed and would still manage both helper architectures.
+The canonical list is [`.ai/backlog.md`](../../backlog.md), with stable item IDs and separate requested/proposed work. Next priorities are B-001 (actual desktop/process-lifetime verification) and B-002 (remaining Settings coverage). Audio removal, the README, folder organization, naming cleanup, and the INI save/load/parser Clean Code increments are complete. B-007 remains open for further bounded refactoring milestones. A single launcher/tray is proposed and would still manage both helper architectures.
 
 ## Phase 5 execution
 
@@ -181,7 +185,7 @@ Remaining verification and design work:
 - Check representative applications at 100% and on the current HiDPI display, then mixed-DPI monitor transitions and the older home monitor. UI compatibility scaling is approved; fractional caller coordinates can round physical spacing to a representable value.
 - Phases 6/7 exercise the retained native property-sheet controls, owned MDI/class filtering, and the real tray controller through a substituted Shell boundary. Still validate actual Explorer delivery, host menu dispatch, context help and keyboard navigation. Disabled aspect-ratio/auto-lineup features remain disabled; app audio has been removed.
 - Preserve explicit impossible-fit limits: oversized movement uses an accessible-origin fallback; ordinary resizing does not translate an outside fixed edge; centered resizing cannot always fit if its original center is outside the desktop.
-- The user committed Phase 11 and authorized the next focused Clean Code milestone, completed in Phase 12. Further refactoring remains in B-007. The user owns commits.
+- The user authorized continuing through all low-hanging refactoring work after Phase 13; Phase 14 retains those uncommitted changes. Further/deeper work remains in B-007 and the deferred audit list. The user owns commits.
 
 ## Phase 8 execution: repository README
 
@@ -230,3 +234,33 @@ The user committed Phase 11 before authorizing this increment. Extracted file-lo
 Verification: independent semantic review found no required corrections. Prefix/suffix comparisons against HEAD confirm the settings table, parser, path handling, public wrappers, and save implementation are untouched. All eight `allsnap.sln` builds passed (Debug, Release, Debug UNICODE, Release UNICODE on Win32/x64), including test-project compilation without execution. Logs are under ignored `build/refactoring-ini-load-verification/`; `git diff --check` passed.
 
 Existing `tests/unit/ini_validation_tests.cpp` and Settings/tray acceptance coverage were inspected, not executed. No tests were added or run; runtime regression verification remains outstanding and the last executed suite is still Phase 7's 286/286 in Debug/Release on each architecture. No app/global hooks were launched, user settings changed, or Git staging/commits performed. Further refactoring remains in B-007 as separate bounded milestones.
+
+## Phase 13 execution: focused INI numeric parser refactoring
+
+After the user committed Phase 12, extracted file-local `ParseIntegerValue` from `getInt` in `src/app/snap_ini.c`. The existing function retains its exact 64-TCHAR profile read and missing/truncated-value guard. Conversion retains signed decimal/0x detection, leading-zero decimals, whitespace handling, original-input no-digit checks, errno reset/ERANGE checks, INT bounds, trailing-character rejection, and output assignment only on success. The settings table, string/path helpers, load/save implementations, and public APIs are unchanged.
+
+Independent semantic review found no required corrections. Prefix/suffix comparisons confirm the bounded scope. All eight solution builds passed (Debug, Release, Debug UNICODE, Release UNICODE on Win32/x64), including test-project compilation without execution; `git diff --check` passed. Logs are under ignored `build/refactoring-ini-parser-verification/`. Existing `tests/unit/ini_validation_tests.cpp` was inspected, not run. No tests were added or executed; runtime regression verification remains outstanding and the last suite results remain Phase 7. No app/global hooks, user settings changes, staging, or commits were involved. Further refactoring remains in B-007.
+
+## Phase 14 execution: finish the low-risk cleanup inventory
+
+The user authorized continuing without another commit checkpoint. Retained Phase 13 and audited active app/engine/common modules for changes whose equivalence is clear from source. Completed the finite safe inventory in thirteen source files:
+
+- INI: remove orphan/redundant declarations and dead locals, correct stale registry comments, and flatten cached-path guards while preserving override/cache/API order and bounds.
+- Settings: share the exact eight existing property-page assignments, flatten context-menu and grid-selection guards, remove the unreferenced app helper `find_index` and orphan declarations, and remove obsolete experiments. Page order, flags, callbacks, unassigned fields, grid selection bounds, notification handling, menu lifetime, and write order are retained.
+- App/tray/debug/help: remove unused state/result bookkeeping, unused declarations/macros, dead initialization, and commented examples. Keep all native calls and arguments; return the existing raw notification BOOL directly, and remove only the provably always-true tooltip-array branch.
+- Engine: remove verified unread/private or write-only state, unused macros/declaration, comment-only alternatives, and a no-op loop initializer. Flatten stack-pop/window-rectangle guards. Retain cursor queries, public engine symbols, arithmetic, callback flow, capacities, and shared hook/subclass ownership.
+
+Supervisor inspected the diffs; app and engine agents cross-reviewed each other's changes, including INI and the retained parser extraction. No required corrections remain. The audit found no further worthwhile obvious cleanup within these boundaries; small explicit grid adapters and already-compact modern geometry/diagnostic helpers remain as written.
+
+All eight `allsnap.sln` configurations build successfully after the final help cleanup (Debug, Release, Debug UNICODE, Release UNICODE on Win32/x64), including test-project compilation without execution. Logs are under ignored `build/low-risk-cleanup-verification/`; `git diff --check` passed. No tests were added or executed; last suite results remain Phase 7, and runtime regression verification is outstanding. No app/global hooks, user settings changes, staging, or commits were involved.
+
+### Deferred audit findings and stopping boundary
+
+These are source-review candidates, not reproduced failures or diagnoses of the intermittent stops. They require behavioral decisions and regression coverage, so were not changed in this pass:
+
+- Settings `PrefsProc` help-message fallthrough, context-menu handle lifetime, and native structure initialization/callback contracts.
+- Tray tooltip character-count/buffer handling and notification failure handling; existing counts/initialization were deliberately preserved.
+- Debug clipboard/file-dialog buffer capacities and error paths; legacy multi-string bounds and debug macros.
+- Typed INI dispatch, unused externally visible engine functions, registry/auto-lineup retirement, geometry/arithmetic deduplication, and lifecycle/shared-state redesign. These exceed the low-risk cleanup scope.
+
+Keep these separate from the completed behavior-preserving pass. Actual desktop/Explorer, monitor/DPI, and long-running verification remain pending under B-001/B-002.

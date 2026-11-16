@@ -42,7 +42,6 @@ static BOOL SaveAppliedSettings(HWND page){
 	SetWindowLongPtr(page,DWLP_MSGRESULT,PSNRET_INVALID_NOCHANGEPAGE);
 	return FALSE;
 }
-//#include "snap_lineup.h"
 
 /*====================================================================
 Globals
@@ -120,9 +119,6 @@ BOOL	Prefs_OnCommand		(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify);
 BOOL	Adv_OnCommand		(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify);
 BOOL	Grid_OnCommand		(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify);
 
-void	Prefs_OnParentNotify(HWND hwnd, UINT msg, HWND hwndChild, int idChild);
-
-
 void Grid_UpdateEnabledDim(	HWND hDlg,	int check_id,const int radios[],const int edits[]);
 
 void	InitGeneral(HWND hDlg);
@@ -144,17 +140,26 @@ void	ApplyAdv(HWND hDlg);
 
 
 UINT	getSelectedToggleKey	(HWND hDlg);
-//void	EnableButtons			(HWND hDlg,BOOL is_enabled);
 
 void CenterWindow(HWND hwnd);
+
+static void InitPropertyPage(PROPSHEETPAGE * page, UINT template_id,
+	DLGPROC dialog_proc, LPCTSTR title){
+	page->dwSize = sizeof(PROPSHEETPAGE);
+	page->dwFlags = PSP_USETITLE;
+	page->hInstance = g_hInst;
+	page->pszTemplate = MAKEINTRESOURCE(template_id);
+	page->pfnDlgProc = dialog_proc;
+	page->pszTitle = title;
+	page->lParam = 0;
+	page->pfnCallback = NULL;
+}
 
 // DoPropertySheet - creates a property sheet that contains three pages.
 // hwndOwner - handle to the owner window of the property sheet.
 //
 // Global variables
 //     g_hInst - instance handle
-
-
 HWND DoPropertySheet(HWND hwndOwner)
 {
     PROPSHEETPAGE psp[3];
@@ -163,32 +168,9 @@ HWND DoPropertySheet(HWND hwndOwner)
 	InitCmnCtls();
 	LoadSettingsForDialog();
 
-    psp[0].dwSize = sizeof(PROPSHEETPAGE);
-    psp[0].dwFlags = PSP_USETITLE;
-    psp[0].hInstance = g_hInst;
-    psp[0].pszTemplate = MAKEINTRESOURCE(IDD_GENERAL);
-	psp[0].pfnDlgProc = PrefsProc;
-    psp[0].pszTitle = _T("Preferences");
-    psp[0].lParam = 0;
-    psp[0].pfnCallback = NULL;
-
-	psp[1].dwSize = sizeof(PROPSHEETPAGE);
-    psp[1].dwFlags = PSP_USETITLE;
-    psp[1].hInstance = g_hInst;
-    psp[1].pszTemplate = MAKEINTRESOURCE(IDD_GRID);
-    psp[1].pfnDlgProc = GridProc;
-    psp[1].pszTitle = _T("Snap to grid");
-    psp[1].lParam = 0;
-    psp[1].pfnCallback = NULL;
-
-	psp[2].dwSize = sizeof(PROPSHEETPAGE);
-    psp[2].dwFlags = PSP_USETITLE;
-    psp[2].hInstance = g_hInst;
-    psp[2].pszTemplate = MAKEINTRESOURCE(IDD_ADVANCED);
-    psp[2].pfnDlgProc = AdvProc;
-    psp[2].pszTitle = _T("Advanced");
-    psp[2].lParam = 0;
-    psp[2].pfnCallback = NULL;
+	InitPropertyPage(&psp[0],IDD_GENERAL,PrefsProc,_T("Preferences"));
+	InitPropertyPage(&psp[1],IDD_GRID,GridProc,_T("Snap to grid"));
+	InitPropertyPage(&psp[2],IDD_ADVANCED,AdvProc,_T("Advanced"));
 
     psh.dwSize = sizeof(PROPSHEETHEADER);
     psh.dwFlags = PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_MODELESS | PSH_USECALLBACK;
@@ -209,45 +191,20 @@ HWND DoPropertySheet(HWND hwndOwner)
 }
  
 BOOL	OnContextMenu(HWND hWnd, HWND hwndCtl, UINT x, UINT y){
-//	TCHAR pszClassName[100];
 	DWORD  context_id;
+	HMENU hContextMenu;
 
-	
-	if ((hwndCtl!=NULL)){
-		//GetClassName(hwndCtl,pszClassName,100);
-		//MB(pszClassName);
-		//POINT pt;
+	if (hwndCtl == NULL) return FALSE;
+	context_id = GetWindowContextHelpId(hwndCtl);
+	if (context_id == 0) return FALSE;
 
-		context_id = GetWindowContextHelpId(hwndCtl);
-
-		if (context_id != 0){
-			HMENU hContextMenu = GetSubMenu(LoadMenu(g_hInst,  MAKEINTRESOURCE(IDR_WHAT)),0);
-
-
-			// Display the menu
-			// GetCursorPos(&pt);
-
-			if (TrackPopupMenu(   hContextMenu,
-				TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD,
-				x,
-				y,
-				0,
-				hWnd,
-				NULL)){
-					
-					tips_show(hwndCtl);
-
-					//POINT pt = {(LONG)x,(LONG)y};
-					//HELPINFO hi = {sizeof(HELPINFO)};
-					//hi.dwContextId =  GetWindowContextHelpId(hwndCtl);
-					//hi.iContextType = HELPINFO_WINDOW;
-					//SendMessage(hwnd,WM_HELP,0L,MAKELPARAM(0,HELPINFO));
-					//MB(debug);
-			}
-			return TRUE;
-		}
+	hContextMenu = GetSubMenu(LoadMenu(g_hInst,MAKEINTRESOURCE(IDR_WHAT)),0);
+	if (TrackPopupMenu(hContextMenu,
+		TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD,
+		x,y,0,hWnd,NULL)){
+		tips_show(hwndCtl);
 	}
-	return FALSE;
+	return TRUE;
 }
 
 void CALLBACK PropSheetCallback(HWND hwndPropSheet, UINT uMsg, LPARAM lParam)
@@ -257,12 +214,7 @@ void CALLBACK PropSheetCallback(HWND hwndPropSheet, UINT uMsg, LPARAM lParam)
 		case PSCB_PRECREATE:
 			{
 				LPDLGTEMPLATE  lpTemplate = (LPDLGTEMPLATE)lParam;
-				
-				
-			//	lpTemplate->style &= ~DS_CONTEXTHELP;
-        
 
-				
 				if(!(lpTemplate->style & DS_CENTER)){
 					lpTemplate->style |= DS_CENTER;
 				}
@@ -626,7 +578,6 @@ void InitSnapTo(HWND hDlg){
 	BOOL new_is_enabled	= isEnabled();
 	UINT new_snap_type  = getSnapType();
 	
-	//g_had_no_snaptos = (new_snap_type == SNAPT_NONE);
 
 	Set_Checked(hDlg,IDC_ENABLED,new_is_enabled);
 
@@ -684,15 +635,10 @@ BOOL Prefs_OnCommand(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify){
 		case IDC_SELF:
 		case IDC_VCENTER:
 		case IDC_HCENTER:
-            //Set_Checked(hDlg,
-			//	IDC_ENABLED,
-			//	(getNewSnapType(hDlg)!=SNAPT_NONE)
-			//	);
 			changed = TRUE;
 			break;
 
 		case IDC_ENABLED:
-			//EnableButtons(hDlg,Is_Checked(hDlg,IDC_ENABLED));
 			changed = TRUE;
 			break;
 	}
@@ -775,15 +721,6 @@ BOOL Grid_OnCommand(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify){
 	return FALSE;
 }
 
-int find_index(int array[],int val,int size){
-	int i=0;
-	for (i=0;i<size;i++){
-		if(array[i] == val){
-			return i;
-		}
-	}
-	return -1;
-}
 int find_checked_index(HWND hDlg,int array[],int size){
 	int i =0;
 	for (i=0;i<size;i++){
@@ -804,23 +741,21 @@ void get_grid_selections
 	int num_types
 )
 {
+	int type_checked;
+	BOOL ignored;
+
 	if ( !Is_Checked(hDlg,enabled_id) ){
 		p_setting->enabled = FALSE;
-	
+		return;
 	}
-	else{
-		int type_checked = find_checked_index(hDlg,radios,NUM_HGRID_RADIOS);
-		p_setting->enabled = TRUE;
-		
-		if (type_checked == -1){
-			return;
-		}
-		else{
-			BOOL ignored = TRUE;
-			p_setting->type = type_checked;
-			p_setting->val = GetDlgItemInt(hDlg,edits[type_checked],&ignored,FALSE);
-		}
+	type_checked = find_checked_index(hDlg,radios,NUM_HGRID_RADIOS);
+	p_setting->enabled = TRUE;
+	if (type_checked == -1){
+		return;
 	}
+	ignored = TRUE;
+	p_setting->type = type_checked;
+	p_setting->val = GetDlgItemInt(hDlg,edits[type_checked],&ignored,FALSE);
 }
 
 void ApplyGrid(HWND hDlg){
@@ -851,19 +786,11 @@ void ApplySnapTo(HWND hDlg){
 	
 	UINT new_snap_type = getNewSnapType(hDlg);
 	BOOL is_enabled_checked = Is_Checked(hDlg,IDC_ENABLED);
-	//BOOL new_is_enabled;
     
 	setSnapType(new_snap_type);
 
-	//if (new_snap_type == SNAPT_NONE){
-	//	Button_SetCheck(GetDlgItem(hDlg,IDC_ENABLED),BST_UNCHECKED);
-	//}
-
-	//new_is_enabled = (is_enabled_checked); // && new_snap_type != SNAPT_NONE);
-	//setEnabled(new_is_enabled);
 	setEnabled(is_enabled_checked);
 	ResetTaskbarIcon();
-	//EnableButtons(hDlg,new_is_enabled);
 }
 
 
@@ -896,7 +823,6 @@ INLINE void ApplyAdv(HWND hDlg){
 	setCroppingTop		( Is_Checked(hDlg,IDC_CROPTOPC) && (new_crop_val != 0) );
 	setKeptToScreen		( Is_Checked(hDlg,IDC_KEPT));
 	setCroppingRgn			( !Is_Checked(hDlg,IDC_CROP_RGN));
-	//setIsAutolineupOn	( Is_Checked(hDlg,IDC_AUTOLINEUP));
 
 	EnableWindow(
 		GetDlgItem(hDlg,IDC_CROPTOP), 
@@ -924,17 +850,6 @@ INLINE void ApplyPrefs(HWND hDlg){
 
 
 
-
-/*
-void EnableButtons(HWND hDlg,BOOL is_enabled){
-	int i=0;
-
-	for (i=0;i<num_snap_type_boxes;i++){
-        EnableWindow(
-			GetDlgItem(hDlg,snap_type_boxes[i].box_id)
-			,is_enabled);
-	}
-}*/
 
 INLINE UINT getSelectedToggleKey(HWND hDlg){
 	HWND hCtl = GetDlgItem(hDlg,IDC_TOGGLEKEYS);
@@ -973,7 +888,6 @@ void CenterWindow(HWND hwnd){
 	else if (yTop + Dlg_height > rcArea.bottom)
 		yTop = rcArea.bottom - Dlg_height;
 
-	// map screen coordinates to child coordinates*/
 	SetWindowPos(hwnd, NULL,xLeft, yTop, -1, -1,
 		SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 }

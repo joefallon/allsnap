@@ -58,7 +58,6 @@ BOOL AddTaskbarIcon(void){
 }
 
 BOOL AddEmptyTaskbarIcon(void){ 
-    BOOL fOK; 
     NOTIFYICONDATA tnid; 
  
     tnid.cbSize = sizeof(NOTIFYICONDATA); 
@@ -67,13 +66,11 @@ BOOL AddEmptyTaskbarIcon(void){
     tnid.uFlags = NIF_MESSAGE; 
     tnid.uCallbackMessage = MYWM_NOTIFYICON; 
   
-    fOK = Shell_NotifyIcon(NIM_ADD, &tnid); 
-    return fOK; 
+    return Shell_NotifyIcon(NIM_ADD, &tnid);
 } 
 
 BOOL DeleteTaskbarIcon(void) 
 { 
-    BOOL res; 
     NOTIFYICONDATA tnid; 
 
 	if (g_isHidden){
@@ -84,8 +81,7 @@ BOOL DeleteTaskbarIcon(void)
     tnid.hWnd = g_hWnd; 
     tnid.uID = IDT_MYTRAY; 
          
-    res = Shell_NotifyIcon(NIM_DELETE, &tnid); 
-    return res; 
+    return Shell_NotifyIcon(NIM_DELETE, &tnid);
 } 
 
 BOOL ResetTaskbarIcon(void)
@@ -124,10 +120,7 @@ BOOL ResetTaskbarIcon(void)
     tnid.uID = IDT_MYTRAY; 
     tnid.uFlags = NIF_ICON | NIF_TIP; 
     tnid.hIcon = hIcon; 
-    if (szTrayTip) 
-        lstrcpyn(tnid.szTip, szTrayTip, sizeof(tnid.szTip)); 
-    else 
-        tnid.szTip[0] = '\0'; 
+    lstrcpyn(tnid.szTip, szTrayTip, sizeof(tnid.szTip));
  
     res = Shell_NotifyIcon(NIM_MODIFY , &tnid); 
  
@@ -136,15 +129,3 @@ BOOL ResetTaskbarIcon(void)
  
     return res; 
 } 
-
-//In my dialog-based application in the OnInitDialog() method, I have the
-//following code to properly set the two icon images (16x16 and 32x32):
-//
-//// Set the 32x32 icon
-//SetIcon(m_hIcon, TRUE);
-//
-// Set the 16x16 icon
-//SetIcon( 
-//
-//
-//
