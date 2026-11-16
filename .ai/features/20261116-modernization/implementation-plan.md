@@ -1,6 +1,6 @@
 # allSnap modernization implementation plan
 
-Status: Phase 7 app sound removal is implemented and independently reviewed. All 286 tests pass in Debug/Release on Win32/x64, all eight solution builds pass, and Release binary imports/exports are verified. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
+Status: Phase 8 adds the root README after the user committed Phase 7. This is a documentation-only milestone; no builds or tests were rerun. The last executable verification remains Phase 7: all 286 tests passed in Debug/Release on Win32/x64, all eight solution builds passed, and Release binary imports/exports were verified. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
 
 ## Current position
 
@@ -8,6 +8,7 @@ Status: Phase 7 app sound removal is implemented and independently reviewed. All
 - Completed: verified local availability of Microsoft's native C++ testing headers, x86/x64 libraries, and VSTest runner. Approved as the common unit/acceptance framework; no dependencies installed.
 - Confirmed with user: root `features/*.feature` files are documentation only; no Gherkin tooling.
 - Completed in Phase 7: all app sound functionality removed; historical compiled help is explicitly retained as an archive.
+- Completed in Phase 8: root README covering build/run commands, settings, dual-architecture operation, tests, source navigation, and known limitations.
 - Native unit/acceptance tests now cover 286 methods (97 unit, 189 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
 - User handles all commits. Agents do not stage, commit, reset, or amend. Phase boundaries below are review checkpoints, not claims of commits already created.
 
@@ -22,7 +23,8 @@ Status: Phase 7 app sound removal is implemented and independently reviewed. All
 | 5. Isolated process lifetime | Actual child-process termination/detach, concurrent owners, shutdown reservations, callback/module retention | Implemented and independently reviewed. Three product failures demonstrated before repair; 12 isolated-process methods and four new unit tests pass within the 222-test matrix. Global-hook/desktop validation remains separate. |
 | 6. Settings behavior audit | Non-sound controls, actual property sheet, tray boundary, persisted validation, MDI and class filtering | Implemented and independently reviewed. Added 55 methods; final 277-test matrix and all eight builds pass. Actual Shell/global-hook delivery and manual UX/hardware checks remain separate. |
 | 7. Sound removal | Audio UI/preview, worker/messages/settings/API, audio assets/help/packaging and exclusive dependencies | Implemented and independently reviewed. Two native UI absence regressions failed before removal; final 286-test matrix, eight builds, and actual Release import/export checks pass. |
-| Later backlog phases | README; folder organization; naming; Clean Code refactoring | Not started; keep behavioral, structural, and naming changes separate. |
+| 8. Repository README | Build/run/configuration/test instructions, source navigation, and known limitations | Complete and independently reviewed; commands, claims, and local links checked against source. No builds or tests rerun. |
+| Later backlog phases | Folder organization; naming; Clean Code refactoring | Not started; keep behavioral, structural, and naming changes separate. |
 ## Execution sequence
 
 ### 1. Establish the test foundation and protect confinement
@@ -73,7 +75,7 @@ Verification: unit/acceptance results on both architectures plus native test-own
 
 ## Backlog
 
-The canonical list is [`.ai/backlog.md`](../../backlog.md), with stable item IDs and separate requested/proposed work. Next priorities are B-001 (actual desktop/process-lifetime verification) and B-002 (remaining Settings coverage). Audio removal, README, folder organization, naming, and Clean Code work remain separate follow-up milestones. A single launcher/tray is proposed and would still manage both helper architectures.
+The canonical list is [`.ai/backlog.md`](../../backlog.md), with stable item IDs and separate requested/proposed work. Next priorities are B-001 (actual desktop/process-lifetime verification) and B-002 (remaining Settings coverage). Audio removal and the README are complete; folder organization, naming, and Clean Code work remain separate follow-up milestones. A single launcher/tray is proposed and would still manage both helper architectures.
 
 ## Phase 5 execution
 
@@ -171,4 +173,10 @@ Remaining verification and design work:
 - Check representative applications at 100% and on the current HiDPI display, then mixed-DPI monitor transitions and the older home monitor. UI compatibility scaling is approved; fractional caller coordinates can round physical spacing to a representable value.
 - Phases 6/7 exercise the retained native property-sheet controls, owned MDI/class filtering, and the real tray controller through a substituted Shell boundary. Still validate actual Explorer delivery, host menu dispatch, context help and keyboard navigation. Disabled aspect-ratio/auto-lineup features remain disabled; app audio has been removed.
 - Preserve explicit impossible-fit limits: oversized movement uses an accessible-origin fallback; ordinary resizing does not translate an outside fixed edge; centered resizing cannot always fit if its original center is outside the desktop.
-- Review this checkpoint with the user before starting the separately listed README, layout, naming, and refactoring backlog phases. The user owns commits.
+- The user committed Phase 7 and authorized the Phase 8 README. Layout, naming, and refactoring remain separate backlog phases. The user owns commits.
+
+## Phase 8 execution: repository README
+
+Added root [README.md](../../../README.md) as the developer/user entry point. It documents the installed build toolchain and output layout, both required process architectures, working-directory INI behavior, Settings and collapsed physical spacing, Microsoft unit/acceptance commands, source navigation, and current manual-validation/packaging limitations. Existing license and historical EULA files are linked.
+
+Verification is supervisor and independent documentation review against project files, the test runner, production settings/startup code, and the recorded Phase 7 results, plus local-link and whitespace checks. No application code changed; no builds or tests were rerun. Manual desktop validation remains outstanding.

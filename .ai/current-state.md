@@ -1,5 +1,7 @@
 # allSnap repository state
 
+The root [README.md](../README.md) is the entry point for build, run, configuration, and test instructions. Phase 8 adds this documentation after the user committed Phase 7; no application behavior changed and no builds or tests were rerun for this documentation-only milestone. The recorded results below are from Phase 7.
+
 ## Purpose and stack
 
 allSnap is a native Windows tray utility that changes how other applications' windows move and resize. It snaps to other windows and monitor work areas, with optional center/grid guides, a center-resize modifier, MDI handling, cropping adjustments, and class-based exclusions (`snap_App.c`, `SNAP_LIB.H`, `Snapper.c`, `snap_WinRects.c`). The UI provides Preferences, Snap to grid, and Advanced property pages (`snap_settings.c`). App sound functionality has been removed.
@@ -80,7 +82,7 @@ The user committed Phase 5 and authorized the Settings audit. Phase 6 added 55 u
 
 The user explicitly considers every feature, including confinement, untrusted. Acceptance contracts describe intended behavior and must fail defects; legacy output is not the oracle. Regression failures demonstrated defects before the repairs, and independent review added cases missed by the first green suite. Confinement now checks full rectangle coverage, including holes, disconnected gaps and exact boundary coincidences; ordinary resizing preserves fixed outer edges, while Ctrl resizing preserves the original center and validates reflected opposite-side snaps. Settings Apply acknowledges save failures and successful retries correctly, and opening Settings preserves an unsaved tray enable/disable toggle. These changes have not established the complete cause of intermittent stops or certified every Settings option.
 
-The canonical backlog is `.ai/backlog.md`. Real desktop validation and remaining manual Settings integration checks are pending. Requested later milestones are root README, source-folder organization, ALLSNAPB naming, and incremental Clean Code refactoring. One launcher/tray managing both architectures is proposed. The user handles commits. Keep this briefing and the implementation plan aligned with actual progress and executed validation.
+The canonical backlog is `.ai/backlog.md`. Real desktop validation and remaining manual Settings integration checks are pending. The root README is complete; requested later milestones are source-folder organization, ALLSNAPB naming, and incremental Clean Code refactoring. One launcher/tray managing both architectures is proposed. The user handles commits. Keep this briefing and the implementation plan aligned with actual progress and executed validation.
 
 ## Consequential constraints and gaps
 
