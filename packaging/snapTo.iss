@@ -18,12 +18,12 @@ AllowNoIcons=yes
 ; MinVersion=4,3.51
 
 [Files]
-Source: "snapTo\Release\snapTo.exe"; DestDir: "{app}"
-Source: "Release\snapToA.exe"; DestDir: "{app}"
-Source: "Release\snap_libA.dll"; DestDir: "{app}"
-Source: "Release_UNICODE\snapToW.exe"; DestDir: "{app}"
-Source: "Release_UNICODE\snap_libW.dll"; DestDir: "{app}"
-Source: "ReadMe.txt"; DestDir: "{app}"; Flags: isreadme
+Source: "..\snapTo\Release\snapTo.exe"; DestDir: "{app}"
+Source: "..\Release\snapToA.exe"; DestDir: "{app}"
+Source: "..\Release\snap_libA.dll"; DestDir: "{app}"
+Source: "..\Release_UNICODE\snapToW.exe"; DestDir: "{app}"
+Source: "..\Release_UNICODE\snap_libW.dll"; DestDir: "{app}"
+Source: "..\ReadMe.txt"; DestDir: "{app}"; Flags: isreadme
 
 [Tasks]
 Name: startup; Description: "Run snapTo on &startup"; Flags: unchecked;

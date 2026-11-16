@@ -150,7 +150,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=.\sides.c
+SOURCE=..\..\src\common\SIDES.C
 
 !IF  "$(CFG)" == "snap_lib - Win32 Release"
 
@@ -170,7 +170,7 @@ SOURCE=.\sides.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_lib.c
+SOURCE=..\..\src\engine\snap_lib.c
 
 !IF  "$(CFG)" == "snap_lib - Win32 Release"
 
@@ -190,7 +190,7 @@ SOURCE=.\snap_lib.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_testers.c
+SOURCE=..\..\src\engine\snap_testers.c
 
 !IF  "$(CFG)" == "snap_lib - Win32 Release"
 
@@ -210,7 +210,7 @@ SOURCE=.\snap_testers.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_WinRects.c
+SOURCE=..\..\src\engine\snap_WinRects.c
 
 !IF  "$(CFG)" == "snap_lib - Win32 Release"
 
@@ -230,7 +230,7 @@ SOURCE=.\snap_WinRects.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\snapper.c
+SOURCE=..\..\src\engine\Snapper.c
 
 !IF  "$(CFG)" == "snap_lib - Win32 Release"
 
@@ -254,27 +254,27 @@ SOURCE=.\snapper.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\CmnHdr.h
+SOURCE=..\..\src\common\CmnHdr.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\sides.h
+SOURCE=..\..\src\common\SIDES.H
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_lib.h
+SOURCE=..\..\src\engine\SNAP_LIB.H
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_testers.h
+SOURCE=..\..\src\engine\snap_testers.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_WinRects.h
+SOURCE=..\..\src\engine\snap_WinRects.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\snapper.h
+SOURCE=..\..\src\engine\SNAPPER.H
 # End Source File
 # End Group
 # Begin Group "Resource Files"

@@ -153,7 +153,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=.\snap_App.c
+SOURCE=..\..\src\app\snap_App.c
 
 !IF  "$(CFG)" == "snapit - Win32 Release"
 
@@ -173,19 +173,19 @@ SOURCE=.\snap_App.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_registry.c
+SOURCE=..\..\src\app\snap_registry.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_settings.c
+SOURCE=..\..\src\app\snap_settings.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_taskbar.c
+SOURCE=..\..\src\app\snap_taskbar.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\StdAfx.c
+SOURCE=..\src\StdAfx.c
 
 !IF  "$(CFG)" == "snapit - Win32 Release"
 
@@ -214,47 +214,47 @@ SOURCE=.\StdAfx.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=.\CmnHdr.h
+SOURCE=..\..\src\common\CmnHdr.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\mydebug.h
+SOURCE=..\..\src\common\MYDEBUG.H
 # End Source File
 # Begin Source File
 
-SOURCE=.\resource.h
+SOURCE=..\..\resources\resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_App.h
+SOURCE=..\..\src\app\snap_App.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_lib.h
+SOURCE=..\..\src\engine\SNAP_LIB.H
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_mywm_msg.h
+SOURCE=..\..\src\common\snap_mywm_msg.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_registry.h
+SOURCE=..\..\src\app\snap_registry.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_settings.h
+SOURCE=..\..\src\app\snap_settings.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\snap_taskbar.h
+SOURCE=..\..\src\app\snap_taskbar.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\snapper.h
+SOURCE=..\..\src\engine\SNAPPER.H
 # End Source File
 # Begin Source File
 
-SOURCE=.\StdAfx.h
+SOURCE=..\..\src\common\StdAfx.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -262,75 +262,75 @@ SOURCE=.\StdAfx.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\arrow.cur
+SOURCE=..\..\resources\ARROW.CUR
 # End Source File
 # Begin Source File
 
-SOURCE=.\bitmap1.bmp
+SOURCE=..\..\resources\BITMAP1.BMP
 # End Source File
 # Begin Source File
 
-SOURCE=.\bmp00001.bmp
+SOURCE=..\..\resources\BMP00001.BMP
 # End Source File
 # Begin Source File
 
-SOURCE=.\cursor1.cur
+SOURCE=..\..\resources\CURSOR1.CUR
 # End Source File
 # Begin Source File
 
-SOURCE=.\cursor2.cur
+SOURCE=..\..\resources\CURSOR2.CUR
 # End Source File
 # Begin Source File
 
-SOURCE=.\desktop_.ico
+SOURCE=..\..\resources\DESKTOP_.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\disabled.ico
+SOURCE=..\..\resources\disabled.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\disabled3.ico
+SOURCE=..\..\resources\disabled3.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\disabled5.ico
+SOURCE=..\..\resources\disabled5.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\enabled.ico
+SOURCE=..\..\resources\enabled.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\enabled3.ico
+SOURCE=..\..\resources\ENABLED3.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\enabled5.ico
+SOURCE=..\..\resources\ENABLED5.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\ico00001.ico
+SOURCE=..\..\resources\ICO00001.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\ico00002.ico
+SOURCE=..\..\resources\ICO00002.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\ico00003.ico
+SOURCE=..\..\resources\ICO00003.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\ico00005.ico
+SOURCE=..\..\resources\ico00005.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\ico00006.ico
+SOURCE=..\..\resources\ico00006.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\icon2.ico
+SOURCE=..\..\resources\icon2.ico
 # End Source File
 # Begin Source File
 
@@ -338,47 +338,47 @@ SOURCE=.\icon256_7.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\icon3.ico
+SOURCE=..\..\resources\ICON3.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\others.bmp
+SOURCE=..\..\resources\OTHERS.BMP
 # End Source File
 # Begin Source File
 
-SOURCE=.\others_d.ico
+SOURCE=..\..\resources\OTHERS_D.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\self_dis.ico
+SOURCE=..\..\resources\SELF_DIS.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\small.ico
+SOURCE=..\..\resources\SMALL.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\snapit.ico
+SOURCE=..\..\resources\snapit.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\snapit.rc
+SOURCE=..\..\resources\snapit.rc
 # End Source File
 # Begin Source File
 
-SOURCE=.\snapitold.ICO
+SOURCE=..\..\resources\snapitold.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\snapto.ico
+SOURCE=..\..\resources\SNAPTO.ICO
 # End Source File
 # Begin Source File
 
-SOURCE=.\snaptoA.ico
+SOURCE=..\..\resources\snaptoA.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\snaptoW.ico
+SOURCE=..\..\resources\snaptoW.ico
 # End Source File
 # End Group
 # Begin Source File

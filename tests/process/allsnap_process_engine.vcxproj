@@ -34,7 +34,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\src\app;$(ProjectDir)..\..\src\engine;$(ProjectDir)..\..\src\common;$(ProjectDir)..\..\resources;$(ProjectDir)..\..\help;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;ALLSNAP_TESTING;ALLSNAP_PROCESS_TESTING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseDebugLibraries)'=='true'">_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseDebugLibraries)'!='true'">NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -53,22 +53,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\sides.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snapper.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_CenterSize.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_CornerInfo.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_Crop.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_frame.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_keys.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_EqualSize.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_InTests.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_KeepToScreen.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_lib.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_MultiSz.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_ResultStack.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_testers.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_TrackResults.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\..\snap_WinRects.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\common\SIDES.C"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\Snapper.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_CenterSize.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_CornerInfo.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_Crop.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_frame.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_keys.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_EqualSize.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_InTests.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_KeepToScreen.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_lib.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_MultiSz.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_ResultStack.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_testers.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_TrackResults.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\..\src\engine\snap_WinRects.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
     <ClCompile Include="process_engine.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
     <ClInclude Include="ProcessProtocol.h" />
   </ItemGroup>

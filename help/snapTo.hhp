@@ -1,6 +1,6 @@
 [OPTIONS]
 Compatibility=1.1 or later
-Compiled file=allSnap.chm
+Compiled file=..\allSnap.chm
 Contents file=Table of Contents.hhc
 Default topic=introducing.html
 Display compile progress=Yes

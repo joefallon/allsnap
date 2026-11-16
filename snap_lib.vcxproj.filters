@@ -15,110 +15,110 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="sides.c">
+    <ClCompile Include="src\common\SIDES.C">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_CenterSize.c">
+    <ClCompile Include="src\engine\snap_CenterSize.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_CornerInfo.c">
+    <ClCompile Include="src\engine\snap_CornerInfo.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_Crop.c">
+    <ClCompile Include="src\engine\snap_Crop.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_EqualSize.c">
+    <ClCompile Include="src\engine\snap_EqualSize.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_InTests.c">
+    <ClCompile Include="src\engine\snap_InTests.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_KeepToScreen.c">
+    <ClCompile Include="src\engine\snap_KeepToScreen.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_lib.c">
+    <ClCompile Include="src\engine\snap_lib.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_MultiSz.c">
+    <ClCompile Include="src\engine\snap_MultiSz.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_ResultStack.c">
+    <ClCompile Include="src\engine\snap_ResultStack.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_testers.c">
+    <ClCompile Include="src\engine\snap_testers.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_TrackResults.c">
+    <ClCompile Include="src\engine\snap_TrackResults.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_WinRects.c">
+    <ClCompile Include="src\engine\snap_WinRects.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snapper.c">
+    <ClCompile Include="src\engine\Snapper.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MYDEBUG.H">
+    <ClInclude Include="src\common\MYDEBUG.H">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource2.h">
+    <ClInclude Include="resources\resource2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sides.h">
+    <ClInclude Include="src\common\SIDES.H">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_CenterSize.h">
+    <ClInclude Include="src\engine\snap_CenterSize.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_CornerInfo.h">
+    <ClInclude Include="src\engine\snap_CornerInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_Crop.h">
+    <ClInclude Include="src\engine\snap_Crop.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_EqualSize.h">
+    <ClInclude Include="src\engine\snap_EqualSize.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_grid.h">
+    <ClInclude Include="src\app\snap_grid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_InTests.h">
+    <ClInclude Include="src\engine\snap_InTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_KeepToScreen.h">
+    <ClInclude Include="src\engine\snap_KeepToScreen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_lib.h">
+    <ClInclude Include="src\engine\SNAP_LIB.H">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_MultiSz.h">
+    <ClInclude Include="src\engine\snap_MultiSz.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_registry.h">
+    <ClInclude Include="src\app\snap_registry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_results.h">
+    <ClInclude Include="src\engine\snap_results.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_ResultStack.h">
+    <ClInclude Include="src\engine\snap_ResultStack.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_testers.h">
+    <ClInclude Include="src\engine\snap_testers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_TrackResults.h">
+    <ClInclude Include="src\engine\snap_TrackResults.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snap_WinRects.h">
+    <ClInclude Include="src\engine\snap_WinRects.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="snapper.h">
+    <ClInclude Include="src\engine\SNAPPER.H">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="snap_lib1.rc">
+    <ResourceCompile Include="resources\snap_lib1.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

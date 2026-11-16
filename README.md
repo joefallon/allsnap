@@ -126,20 +126,37 @@ plain specifications with no Gherkin runner. Latest recorded results are in the
 - Oversized windows cannot always fit inside the desktop. The movement fallback
   preserves their size and keeps their origin accessible.
 - Installer scripts retain historical output layouts and unsupported dependencies.
-  The checked-in `snapTo.chm` is an old archive; source help has been updated but
+  The checked-in `legacy/archive/snapTo.chm` is an old archive; source help has been updated but
   that compiled file has not been regenerated.
 
 ## Repository guide
 
-The source is currently mostly flat. Use the `.vcxproj` compile lists to distinguish
-active code from old entry points and historical build files.
+Production code is separated by responsibility. The solution and project files
+remain at the root; build commands, output paths, debugger working directory, and
+the checked-in INI location are unchanged. Use the `.vcxproj` compile lists to
+identify active code.
+
+| Folder | Contents |
+| --- | --- |
+| `src/app/` | Tray application, Settings, persistence, and UI adapters. |
+| `src/engine/` | Hook/subclass lifecycle, snapping, confinement, and geometry. |
+| `src/common/` | Shared headers, rectangle helpers, and diagnostics. |
+| `resources/` | Resource scripts/headers, manifests, icons, cursors, and bitmaps. |
+| `help/` | HTML/context help sources, styles, images, and help projects. |
+| `packaging/` | Historical Inno Setup scripts/language files; packaging remains unvalidated. |
+| `legacy/` | Inactive source, old project definitions, and archived artifacts. |
+| `tests/`, `features/`, `.ai/` | Automated tests, behavior specifications, and project records. |
+
+The archived projects in `legacy/projects/` are historical references. Build with
+the root solution. Compiling `help/snapTo.hhp` still targets root `allSnap.chm`,
+matching the app's existing help lookup; the archived CHM has not been rebuilt.
 
 | Area | Starting points |
 | --- | --- |
-| App startup, tray, and Settings | [snap_App.c](snap_App.c), [snap_taskbar.c](snap_taskbar.c), [snap_settings.c](snap_settings.c) |
-| Hook/subclass ownership and settings API | [snap_lib.c](snap_lib.c), [SNAP_LIB.H](SNAP_LIB.H) |
-| Move/resize, candidates, confinement | [Snapper.c](Snapper.c), [snap_WinRects.c](snap_WinRects.c), [snap_KeepToScreen.c](snap_KeepToScreen.c) |
-| Resources and persisted preferences | [snapit.rc](snapit.rc), [snap_ini.c](snap_ini.c) |
+| App startup, tray, and Settings | [snap_App.c](src/app/snap_App.c), [snap_taskbar.c](src/app/snap_taskbar.c), [snap_settings.c](src/app/snap_settings.c) |
+| Hook/subclass ownership and settings API | [snap_lib.c](src/engine/snap_lib.c), [SNAP_LIB.H](src/engine/SNAP_LIB.H) |
+| Move/resize, candidates, confinement | [Snapper.c](src/engine/Snapper.c), [snap_WinRects.c](src/engine/snap_WinRects.c), [snap_KeepToScreen.c](src/engine/snap_KeepToScreen.c) |
+| Resources and persisted preferences | [snapit.rc](resources/snapit.rc), [snap_ini.c](src/app/snap_ini.c) |
 | Developer briefing and next milestones | [current-state.md](.ai/current-state.md), [implementation plan](.ai/features/20261116-modernization/implementation-plan.md), [backlog](.ai/backlog.md) |
 
 See [LICENSE](LICENSE) for the MIT license. Historical installer material also

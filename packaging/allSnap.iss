@@ -3,37 +3,37 @@
 ;
 
 [Setup]
-OutputBaseFilename=asnp132
-AppName=allSnapBeta
-AppVerName=allSnap version 1.32.0 Beta
+OutputBaseFilename=asnp1314
+AppName=allSnap
+AppVerName=allSnap version 1.34 Beta 4 [Non Debug]
 AppMutex=IVAN_HECKMAN_ALLSNAP_MUTEX,IVAN_HECKMAN_ALLSNAP_MUTEXB
-AppCopyright=Copyright (C) 2002-2005 Ivan Heckman
+AppCopyright=Copyright (C) 2002-2004 Ivan Heckman
 AppPublisher=Ivan Heckman
 AppPublisherURL=http://members.rogers.com/ivanheckman
 AppUpdatesURL=http://members.rogers.com/ivanheckman
-AppVersion=1.32
-DefaultDirName={pf}\allSnapBeta
-DefaultGroupName=allSnapBeta
+AppVersion=1.31.4
+DefaultDirName={pf}\allSnap
+DefaultGroupName=allSnap
 UninstallDisplayIcon={app}\allSnap.exe
-LicenseFile=EULA.txt
+LicenseFile=..\EULA.TXT
 AllowNoIcons=yes
-PrivilegesRequired=admin
 ; uncomment the following line if you want your installation to run on NT 3.51 too.
 ; MinVersion=4,3.51
 
 [Files]
-Source: "Debug\snapToA.exe"; DestDir: "{app}"; DestName: "allSnap.exe"; MinVersion: 1, 0
-Source: "Debug\snap_libA.dll"; DestDir: "{app}"; MinVersion: 1, 0; Flags: restartreplace
-Source: "Debug_UNICODE\snapToW.exe"; DestDir: "{app}"; DestName: "allSnap.exe"; MinVersion: 0, 1
-Source: "Debug_UNICODE\snap_libW.dll"; DestDir: "{app}"; MinVersion: 0, 1; Flags: restartreplace
-Source: "auto_lineup\Debug\auto_lineup.dll"; DestDir: "{app}"; Flags: restartreplace
-Source: "allSnap.chm"; DestDir: "{app}"
+Source: "..\Release\snapToA.exe"; DestDir: "{app}"; DestName: "allSnap.exe"; MinVersion: 1, 0
+Source: "..\Release\snap_libA.dll"; DestDir: "{app}"; MinVersion: 1, 0
+Source: "..\Release_UNICODE\snapToW.exe"; DestDir: "{app}"; DestName: "allSnap.exe"; MinVersion: 0, 1
+Source: "..\Release_UNICODE\snap_libW.dll"; DestDir: "{app}"; MinVersion: 0, 1
+Source: "..\Release\auto_lineup.dll"; DestDir: "{app}";
+Source: "..\allSnap.chm"; DestDir: "{app}"
 
 [Tasks]
 Name: startup; Description: "Run allSnap on &startup"; Flags: unchecked;
 Name: desktopicon; Description: "Create a &desktop icon";  Flags: unchecked
 Name: quicklaunchicon; Description: "Create a &quick launch icon";  Flags: unchecked
-  
+
+
 [Code]
 function MessageBox(hWnd: Integer; lpText, lpCaption: String; uType: Cardinal): Integer;
 external 'MessageBoxA@user32.dll stdcall';
@@ -81,10 +81,10 @@ end;
 
 
 [Icons]
-Name: "{group}\allSnap Beta"; Filename: "{app}\allSnap.EXE"; WorkingDir: "{app}"
+Name: "{group}\allSnap"; Filename: "{app}\allSnap.EXE"; WorkingDir: "{app}"
 Name: "{group}\allSnap Help"; Filename: "{app}\allSnap.chm"; WorkingDir: "{app}"
-Name: "{userdesktop}\allSnap Beta"; Filename: "{app}\allSnap.exe"; WorkingDir: "{app}"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\allSnap Beta"; Filename: "{app}\allSnap.exe";WorkingDir: "{app}"; Tasks: quicklaunchicon
+Name: "{userdesktop}\allSnap"; Filename: "{app}\allSnap.exe"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\allSnap"; Filename: "{app}\allSnap.exe";WorkingDir: "{app}"; Tasks: quicklaunchicon
 Name: "{userstartup}\allSnap"; Filename: "{app}\allSnap.exe"; WorkingDir: "{app}"; Tasks: startup
 ; NOTE: Most apps do not need registry entries to be pre-created. If you
 ; don't know what the registry is or if you need to use it, then chances are
@@ -97,8 +97,8 @@ Name: "{userstartup}\allSnap"; Filename: "{app}\allSnap.exe"; WorkingDir: "{app}
 ; if there is nothing left in them.
 Root: HKCU; Subkey: "Software\IvanHeckman"; Flags: uninsdeletekeyifempty
 Root: HKCU; Subkey: "Software\IvanHeckman\allSnap"; Flags: uninsdeletekey
-Root: HKCU; Subkey: "Software\IvanHeckman\allSnap\Settings"; ValueType: string; ValueName: "skinned_classes"; ValueData: "Shell_TrayWnd;icoCTactTrilly;CabinetWClass;ConsoleWindowClass;Winamp PE;Winamp EQ;Winamp MB;Winamp v1.x;BaseWindow_RootWnd"
-Root: HKCU; Subkey: "Software\IvanHeckman\allSnap\Settings"; ValueType: string; ValueName: "ignored_classes"; ValueData: "Progman;IDEOwner;NeilShadow;DockItemClass;ODIndicator"
+Root: HKCU; Subkey: "Software\IvanHeckman\allSnap\Settings"; ValueType: multisz; ValueName: "skinned_windows"; ValueData: "Shell_TrayWnd{break}icoCTactTrilly{break}ConsoleWindowClass{break}Winamp PE{break}Winamp EQ{break}Winamp MB{break}Winamp v1.x{break}BaseWindow_RootWnd"
+Root: HKCU; Subkey: "Software\IvanHeckman\allSnap\Settings"; ValueType: multisz; ValueName: "ignored_windows"; ValueData: "Progman{break}IDEOwner{break}NeilShadow"
 
 [Run]
 Filename: "{app}\allSnap.EXE"; Description: "Launch application"; Flags: postinstall nowait skipifsilent unchecked

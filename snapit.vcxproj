@@ -41,6 +41,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\app;$(ProjectDir)src\engine;$(ProjectDir)src\common;$(ProjectDir)resources;$(ProjectDir)help;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAs>CompileAsC</CompileAs>
@@ -56,6 +57,7 @@
       <ProgramDataBaseFileName>$(IntDir)$(ProjectName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseDebugLibraries)'=='true'">_DEBUG;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='x64'">_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -73,87 +75,87 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Sides.c" />
-    <ClCompile Include="snap_App.c" />
-    <ClCompile Include="snap_debug.c" />
-    <ClCompile Include="snap_diagnostics.c" />
-    <ClCompile Include="snap_grid.c" />
-    <ClCompile Include="snap_ini.c" />
-    <ClCompile Include="snap_registry.c" />
-    <ClCompile Include="snap_settings.c" />
-    <ClCompile Include="snap_taskbar.c" />
-    <ClCompile Include="snap_tips.c" />
+    <ClCompile Include="src\common\SIDES.C" />
+    <ClCompile Include="src\app\snap_App.c" />
+    <ClCompile Include="src\app\snap_debug.c" />
+    <ClCompile Include="src\common\snap_diagnostics.c" />
+    <ClCompile Include="src\app\snap_grid.c" />
+    <ClCompile Include="src\app\snap_ini.c" />
+    <ClCompile Include="src\app\snap_registry.c" />
+    <ClCompile Include="src\app\snap_settings.c" />
+    <ClCompile Include="src\app\snap_taskbar.c" />
+    <ClCompile Include="src\app\snap_tips.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CmnHdr.h" />
-    <ClInclude Include="mydebug.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="snapper.h" />
-    <ClInclude Include="snap_App.h" />
-    <ClInclude Include="snap_ini.h" />
-    <ClInclude Include="snap_lib.h" />
-    <ClInclude Include="snap_lineup.h" />
-    <ClInclude Include="snap_mywm_msg.h" />
-    <ClInclude Include="snap_registry.h" />
-    <ClInclude Include="snap_settings.h" />
-    <ClInclude Include="snap_taskbar.h" />
-    <ClInclude Include="snap_tips.h" />
-    <ClInclude Include="StdAfx.h" />
+    <ClInclude Include="src\common\CmnHdr.h" />
+    <ClInclude Include="src\common\MYDEBUG.H" />
+    <ClInclude Include="resources\resource.h" />
+    <ClInclude Include="src\engine\SNAPPER.H" />
+    <ClInclude Include="src\app\snap_App.h" />
+    <ClInclude Include="src\app\snap_ini.h" />
+    <ClInclude Include="src\engine\SNAP_LIB.H" />
+    <ClInclude Include="src\app\snap_lineup.h" />
+    <ClInclude Include="src\common\snap_mywm_msg.h" />
+    <ClInclude Include="src\app\snap_registry.h" />
+    <ClInclude Include="src\app\snap_settings.h" />
+    <ClInclude Include="src\app\snap_taskbar.h" />
+    <ClInclude Include="src\app\snap_tips.h" />
+    <ClInclude Include="src\common\StdAfx.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="about.html" />
-    <None Include="allSnap.iss" />
-    <None Include="allSnapDebug.iss" />
-    <None Include="arrow.cur" />
-    <None Include="cursor1.cur" />
-    <None Include="cursor2.cur" />
-    <None Include="help.html" />
-    <None Include="introducing.html" />
-    <None Include="knownproblems.html" />
-    <None Include="performance.html" />
-    <None Include="Resource.hm" />
-    <None Include="running.html" />
-    <None Include="settings.html" />
+    <None Include="help\about.html" />
+    <None Include="packaging\allSnap.iss" />
+    <None Include="packaging\allSnapDebug.iss" />
+    <None Include="resources\ARROW.CUR" />
+    <None Include="resources\CURSOR1.CUR" />
+    <None Include="resources\CURSOR2.CUR" />
+    <None Include="help\help.html" />
+    <None Include="help\introducing.html" />
+    <None Include="help\knownproblems.html" />
+    <None Include="help\performance.html" />
+    <None Include="resources\resource.hm" />
+    <None Include="help\running.html" />
+    <None Include="help\settings.html" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="bitmap1.bmp" />
-    <Image Include="bmp00001.bmp" />
-    <Image Include="desktop_.ico" />
-    <Image Include="disabled.ico" />
-    <Image Include="disabled3.ico" />
-    <Image Include="disabled5.ico" />
-    <Image Include="enabled.ico" />
-    <Image Include="enabled3.ico" />
-    <Image Include="enabled5.ico" />
-    <Image Include="ico00001.ico" />
-    <Image Include="ico00002.ico" />
-    <Image Include="ico00003.ico" />
-    <Image Include="ico00005.ico" />
-    <Image Include="ico00006.ico" />
-    <Image Include="ico00007.ico" />
-    <Image Include="ico00008.ico" />
-    <Image Include="ico00009.ico" />
-    <Image Include="icon2.ico" />
-    <Image Include="icon3.ico" />
-    <Image Include="others.bmp" />
-    <Image Include="others_d.ico" />
-    <Image Include="self_dis.ico" />
-    <Image Include="small.ico" />
-    <Image Include="snapit.ico" />
-    <Image Include="snapitold.ICO" />
-    <Image Include="snapto.ico" />
-    <Image Include="snaptoA.ico" />
-    <Image Include="snaptoW.ico" />
-    <Image Include="x-click-but21 copy.bmp" />
-    <Image Include="xpenable.ico" />
-    <Image Include="xptray_disabled.ico" />
-    <Image Include="xptray_enabled.ico" />
+    <Image Include="resources\BITMAP1.BMP" />
+    <Image Include="resources\BMP00001.BMP" />
+    <Image Include="resources\DESKTOP_.ICO" />
+    <Image Include="resources\disabled.ico" />
+    <Image Include="resources\disabled3.ico" />
+    <Image Include="resources\disabled5.ico" />
+    <Image Include="resources\enabled.ico" />
+    <Image Include="resources\ENABLED3.ICO" />
+    <Image Include="resources\ENABLED5.ICO" />
+    <Image Include="resources\ICO00001.ICO" />
+    <Image Include="resources\ICO00002.ICO" />
+    <Image Include="resources\ICO00003.ICO" />
+    <Image Include="resources\ico00005.ico" />
+    <Image Include="resources\ico00006.ico" />
+    <Image Include="resources\ico00007.ico" />
+    <Image Include="resources\ico00008.ico" />
+    <Image Include="resources\ico00009.ico" />
+    <Image Include="resources\icon2.ico" />
+    <Image Include="resources\ICON3.ICO" />
+    <Image Include="resources\OTHERS.BMP" />
+    <Image Include="resources\OTHERS_D.ICO" />
+    <Image Include="resources\SELF_DIS.ICO" />
+    <Image Include="resources\SMALL.ICO" />
+    <Image Include="resources\snapit.ico" />
+    <Image Include="resources\snapitold.ICO" />
+    <Image Include="resources\SNAPTO.ICO" />
+    <Image Include="resources\snaptoA.ico" />
+    <Image Include="resources\snaptoW.ico" />
+    <Image Include="resources\x-click-but21 copy.bmp" />
+    <Image Include="resources\xpenable.ico" />
+    <Image Include="resources\xptray_disabled.ico" />
+    <Image Include="resources\xptray_enabled.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="snapit.rc" />
+    <ResourceCompile Include="resources\snapit.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="allSnap.exe.manifest" />
+    <None Include="resources\allSnap.exe.manifest" />
     <ProjectReference Include="snap_lib.vcxproj">
       <Project>{01723DEC-96CD-490C-905E-E96B08685A52}</Project>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>

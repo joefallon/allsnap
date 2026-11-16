@@ -39,7 +39,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)..;$(VCInstallDir)Auxiliary\VS\UnitTest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\src\app;$(ProjectDir)..\src\engine;$(ProjectDir)..\src\common;$(ProjectDir)..\resources;$(ProjectDir)..\help;$(VCInstallDir)Auxiliary\VS\UnitTest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ALLSNAP_TESTING;WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseDebugLibraries)'=='true'">_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseDebugLibraries)'!='true'">NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -59,7 +59,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='x64'">_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
@@ -70,31 +70,31 @@
     <ClInclude Include="support\EngineFixture.h" />
     <ClInclude Include="support\SettingsFixture.h" />
     <ClCompile Include="support\AppFixture.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ResourceCompile Include="..\snapit.rc" />
+    <ResourceCompile Include="..\resources\snapit.rc" />
   </ItemGroup>
   <!-- Reuse production C sources without a second snapping implementation. -->
   <ItemGroup>
-    <ClCompile Include="..\sides.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snapper.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_CenterSize.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_CornerInfo.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_Crop.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_frame.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_keys.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_EqualSize.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_InTests.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_KeepToScreen.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_lib.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_MultiSz.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_ResultStack.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_testers.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_TrackResults.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_WinRects.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_diagnostics.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_grid.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
-    <ClCompile Include="..\snap_ini.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
-    <ClCompile Include="..\snap_taskbar.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
-    <ClCompile Include="..\snap_settings.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\src\common\SIDES.C"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\Snapper.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_CenterSize.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_CornerInfo.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_Crop.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_frame.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_keys.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_EqualSize.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_InTests.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_KeepToScreen.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_lib.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_MultiSz.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_ResultStack.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_testers.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_TrackResults.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\engine\snap_WinRects.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\common\snap_diagnostics.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
+    <ClCompile Include="..\src\app\snap_grid.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\src\app\snap_ini.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\src\app\snap_taskbar.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\src\app\snap_settings.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="process\allsnap_process_engine.vcxproj">

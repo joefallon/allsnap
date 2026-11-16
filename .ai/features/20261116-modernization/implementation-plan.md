@@ -1,6 +1,6 @@
 # allSnap modernization implementation plan
 
-Status: Phase 8 adds the root README after the user committed Phase 7. This is a documentation-only milestone; no builds or tests were rerun. The last executable verification remains Phase 7: all 286 tests passed in Debug/Release on Win32/x64, all eight solution builds passed, and Release binary imports/exports were verified. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
+Status: Phase 9 organizes source, resources, help, packaging, and historical material after the user committed Phase 8. Production C/header/resource contents are unchanged. Test execution was not requested for this structural milestone; the last test results remain Phase 7 (286/286 in Debug/Release on Win32/x64). Build and reference verification are recorded under Phase 9 below. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
 
 ## Current position
 
@@ -9,6 +9,7 @@ Status: Phase 8 adds the root README after the user committed Phase 7. This is a
 - Confirmed with user: root `features/*.feature` files are documentation only; no Gherkin tooling.
 - Completed in Phase 7: all app sound functionality removed; historical compiled help is explicitly retained as an archive.
 - Completed in Phase 8: root README covering build/run commands, settings, dual-architecture operation, tests, source navigation, and known limitations.
+- Completed in Phase 9: folder organization with project/include/filter, installer-input, help-output, and documentation references updated; behavior and project naming preserved.
 - Native unit/acceptance tests now cover 286 methods (97 unit, 189 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
 - User handles all commits. Agents do not stage, commit, reset, or amend. Phase boundaries below are review checkpoints, not claims of commits already created.
 
@@ -24,7 +25,8 @@ Status: Phase 8 adds the root README after the user committed Phase 7. This is a
 | 6. Settings behavior audit | Non-sound controls, actual property sheet, tray boundary, persisted validation, MDI and class filtering | Implemented and independently reviewed. Added 55 methods; final 277-test matrix and all eight builds pass. Actual Shell/global-hook delivery and manual UX/hardware checks remain separate. |
 | 7. Sound removal | Audio UI/preview, worker/messages/settings/API, audio assets/help/packaging and exclusive dependencies | Implemented and independently reviewed. Two native UI absence regressions failed before removal; final 286-test matrix, eight builds, and actual Release import/export checks pass. |
 | 8. Repository README | Build/run/configuration/test instructions, source navigation, and known limitations | Complete and independently reviewed; commands, claims, and local links checked against source. No builds or tests rerun. |
-| Later backlog phases | Folder organization; naming; Clean Code refactoring | Not started; keep behavioral, structural, and naming changes separate. |
+| 9. Folder organization | Separate app, engine, common code, resources, help, packaging, and legacy material | Complete and independently reviewed. Moved C/headers/resources unchanged; all eight solution builds pass, project/local-link checks pass; no tests executed. |
+| Later backlog phases | Naming; Clean Code refactoring | Not started; keep behavioral, structural, and naming changes separate. |
 ## Execution sequence
 
 ### 1. Establish the test foundation and protect confinement
@@ -46,7 +48,7 @@ Status: initial repairs implemented and independently reviewed. The failed-subcl
 
 - Document `features/hook-lifecycle.feature` scenarios and add regressions for ignored hook startup failure and failed subclass registration.
 - Add coverage for shared versus process-local ownership, unrelated process detach, repeated cleanup, and shutdown following partial initialization. Use controlled failure injection for deterministic failure paths; add isolated process checks where ownership requires them.
-- Fix state transitions and startup unwinding locally in `snap_lib.c`/`snap_App.c`; preserve the existing hook API and DLL boundaries. Do not solve a shared-ownership defect by simply making every shared flag process-local.
+- Fix state transitions and startup unwinding locally in `src/engine/snap_lib.c`/`src/app/snap_App.c`; preserve the existing hook API and DLL boundaries. Do not solve a shared-ownership defect by simply making every shared flag process-local.
 - Add small, actionable diagnostics for startup/hook/subclass failures and clean versus abnormal shutdown. Capture errors at the failing API. Avoid synchronous disk logging or blocking IPC in hot hook callbacks. Do not introduce a watchdog or claim the reported intermittent stop is diagnosed.
 
 Verification: demonstrate each targeted regression before/after its repair, run both suites for x86/x64, and check normal startup/shutdown in a controlled environment. Report crash reproduction separately from successful state-transition tests.
@@ -58,7 +60,7 @@ Status: initial repairs implemented and independently reviewed, including proper
 - Write `features/monitor-and-grid-settings.feature` scenarios for multiple monitors with many grid lines and malformed persisted settings.
 - Separate real work-area enumeration/accounting from artificial snap-guide candidates. Ensure enabling a grid cannot hide later monitors or turn a guide line into a confinement work area.
 - Validate grid modes and numeric values before indexing UI arrays or dividing; preserve valid legacy keys and preferences. Set deterministic limits that match actual array capacities. Add unit tests for those boundaries.
-- Keep changes to `snap_WinRects.c`, grid/settings boundaries, and their immediate callers. Reuse the existing rectangle result structures wherever suitable.
+- Keep changes to `src/engine/snap_WinRects.c`, grid/settings boundaries, and their immediate callers. Reuse the existing rectangle result structures wherever suitable.
 
 Verification: acceptance scenarios retain all work areas with grids enabled; invalid input is handled safely; baseline confinement and edge-snapping tests pass for x86/x64.
 
@@ -75,7 +77,7 @@ Verification: unit/acceptance results on both architectures plus native test-own
 
 ## Backlog
 
-The canonical list is [`.ai/backlog.md`](../../backlog.md), with stable item IDs and separate requested/proposed work. Next priorities are B-001 (actual desktop/process-lifetime verification) and B-002 (remaining Settings coverage). Audio removal and the README are complete; folder organization, naming, and Clean Code work remain separate follow-up milestones. A single launcher/tray is proposed and would still manage both helper architectures.
+The canonical list is [`.ai/backlog.md`](../../backlog.md), with stable item IDs and separate requested/proposed work. Next priorities are B-001 (actual desktop/process-lifetime verification) and B-002 (remaining Settings coverage). Audio removal, the README, and folder organization are complete; naming and Clean Code work remain separate follow-up milestones. A single launcher/tray is proposed and would still manage both helper architectures.
 
 ## Phase 5 execution
 
@@ -173,10 +175,24 @@ Remaining verification and design work:
 - Check representative applications at 100% and on the current HiDPI display, then mixed-DPI monitor transitions and the older home monitor. UI compatibility scaling is approved; fractional caller coordinates can round physical spacing to a representable value.
 - Phases 6/7 exercise the retained native property-sheet controls, owned MDI/class filtering, and the real tray controller through a substituted Shell boundary. Still validate actual Explorer delivery, host menu dispatch, context help and keyboard navigation. Disabled aspect-ratio/auto-lineup features remain disabled; app audio has been removed.
 - Preserve explicit impossible-fit limits: oversized movement uses an accessible-origin fallback; ordinary resizing does not translate an outside fixed edge; centered resizing cannot always fit if its original center is outside the desktop.
-- The user committed Phase 7 and authorized the Phase 8 README. Layout, naming, and refactoring remain separate backlog phases. The user owns commits.
+- The user committed Phase 8 and authorized the Phase 9 folder organization. Naming and refactoring remain separate backlog phases. The user owns commits.
 
 ## Phase 8 execution: repository README
 
 Added root [README.md](../../../README.md) as the developer/user entry point. It documents the installed build toolchain and output layout, both required process architectures, working-directory INI behavior, Settings and collapsed physical spacing, Microsoft unit/acceptance commands, source navigation, and current manual-validation/packaging limitations. Existing license and historical EULA files are linked.
 
 Verification is supervisor and independent documentation review against project files, the test runner, production settings/startup code, and the recorded Phase 7 results, plus local-link and whitespace checks. No application code changed; no builds or tests were rerun. Manual desktop validation remains outstanding.
+
+## Phase 9 execution: organize source into folders
+
+The user committed Phase 8 before authorizing this structural increment. Moved 173 tracked files into `src/app/`, `src/engine/`, `src/common/`, `resources/`, `help/`, `packaging/`, and `legacy/` (inactive `src/`, historical `projects/`, and `archive/`). Existing tests/features retain their folders. Root solution/project names, GUIDs, output directories, debugger working directory, and INI selection are unchanged.
+
+Updated the five modern projects' source/resource paths and include directories, both IDE filter files, historical source lists, installer input/license paths, and documentation links. Resource scripts, headers, manifests, and assets remain siblings without content edits. `help/snapTo.hhp` writes `..\allSnap.chm`, preserving the application's existing root help lookup. Historical projects/installers remain unvalidated archives; their existing missing/obsolete dependencies were not repaired. No compiled help was regenerated.
+
+Verification:
+
+- All eight `ALLSNAPB.sln` builds passed: Debug, Release, Debug UNICODE, and Release UNICODE on Win32/x64. This compiles the test DLL and isolated-process helpers but does not execute tests. Logs are under ignored `build/layout-verification/`; existing deprecated `GetVersionEx` warnings remain.
+- Compared moved C/header/resource/assets against HEAD with normal Git text normalization: unchanged. All moved files exist and are not ignored; modern project/filter inputs and local Markdown links resolve. `git diff --check` passed.
+- Independent review found two relocation issues, both corrected: archive folder names initially matched ignore rules, and the still-included `WDJSUB.H` belongs with active engine headers even though its old C implementation is inactive. No further required corrections remained.
+
+No tests were executed for this increment; the last results remain Phase 7's 286/286 in Debug/Release on each architecture. No application/global hooks were launched, user INI changed, or Git staging/commits performed. Manual desktop validation, naming, and Clean Code work remain separate.
