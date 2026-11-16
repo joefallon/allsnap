@@ -181,42 +181,30 @@ LPCTSTR get_ini_path()
 	}
 }
 
-static BOOL LoadSettings(BOOL preserve_runtime){
-	int		temp = 0;
-	DWORD	dwSize=sizeof(DWORD);
-	int		reg_index = 0;
-	BOOL	fOK = FALSE;
-	LPCTSTR inipath = get_ini_path();
+/* FALSE stops traversal for an unsupported type; missing/invalid values are skipped. */
+static BOOL LoadSettingFromINI(const REG_ITEM * item, LPCTSTR inipath){
+	LPCTSTR name = item->value_name;
+	int value = 0;
 
-	if (!inipath){
-		return FALSE;
-	}
-
-	for (reg_index = 0; ini_items[reg_index].rt!=REGT_EMPTY; reg_index++){
-		LPCTSTR name = ini_items[reg_index].value_name;
-		if (preserve_runtime && (_tcscmp(name,_T("enabled")) == 0
-			|| _tcscmp(name,_T("icon_hidden")) == 0)) continue;
-		temp = 0;
-		switch(ini_items[reg_index].rt){
-
+	switch(item->rt){
 		case REGT_BOOL:
-            if (getInt(ini_items[reg_index].value_name,&temp,inipath)){
-				((PF_SET_BOOL)(ini_items[reg_index].pfv_setter))(temp != 0);
+			if (getInt(name,&value,inipath)){
+				((PF_SET_BOOL)item->pfv_setter)(value != 0);
 			}
 			break;
 
 		case REGT_INT:
-			if (getInt(ini_items[reg_index].value_name,&temp,inipath)){
+			if (getInt(name,&value,inipath)){
 				if ((_tcscmp(name,_T("win_tresh")) == 0 || _tcscmp(name,_T("screen_tresh")) == 0)
-					&& (temp < 2 || temp > 100)) break;
-				if (_tcscmp(name,_T("crop_top")) == 0 && temp < 0) break;
-				((PF_SET_INT)(ini_items[reg_index].pfv_setter))(temp);
+					&& (value < 2 || value > 100)) break;
+				if (_tcscmp(name,_T("crop_top")) == 0 && value < 0) break;
+				((PF_SET_INT)item->pfv_setter)(value);
 			}
 			break;
 
 		case REGT_UINT:
-			if (getInt(ini_items[reg_index].value_name,&temp,inipath)){
-				((PF_SET_UINT)(ini_items[reg_index].pfv_setter))((UINT)temp);
+			if (getInt(name,&value,inipath)){
+				((PF_SET_UINT)item->pfv_setter)((UINT)value);
 			}
 			break;
 
@@ -225,8 +213,8 @@ static BOOL LoadSettings(BOOL preserve_runtime){
 				TCHAR	path_buffer[MAX_STRING_SIZE];
 				int ret_len = 0;
 
-				if (INIgetStringVal(ini_items[reg_index].value_name,path_buffer,&ret_len,MAX_STRING_SIZE,inipath)){
-					(*(PF_SET_SZ)(ini_items[reg_index].pfv_setter))((LPCTSTR)path_buffer,ret_len);
+				if (INIgetStringVal(name,path_buffer,&ret_len,MAX_STRING_SIZE,inipath)){
+					(*(PF_SET_SZ)item->pfv_setter)((LPCTSTR)path_buffer,ret_len);
 				}
 			}
 			break;
@@ -235,11 +223,26 @@ static BOOL LoadSettings(BOOL preserve_runtime){
 
 		case REGT_EMPTY:
 		default:
-			goto LoadSettingsFromRegistry_END;
-		}
+			return FALSE;
 	}
-	fOK = TRUE;
-LoadSettingsFromRegistry_END:
+	return TRUE;
+}
+
+static BOOL LoadSettings(BOOL preserve_runtime){
+	int setting_index;
+	LPCTSTR inipath = get_ini_path();
+
+	if (!inipath){
+		return FALSE;
+	}
+
+	for (setting_index = 0; ini_items[setting_index].rt!=REGT_EMPTY; setting_index++){
+		LPCTSTR name = ini_items[setting_index].value_name;
+		if (preserve_runtime && (_tcscmp(name,_T("enabled")) == 0
+			|| _tcscmp(name,_T("icon_hidden")) == 0)) continue;
+		/* Preserve successful load status when an unsupported type ends traversal. */
+		if (!LoadSettingFromINI(&ini_items[setting_index],inipath)) break;
+	}
 	return TRUE;
 }
 
