@@ -4,7 +4,6 @@
 #include "auto_lineup/autolineup.h"
 
 extern HWND g_hWnd;
-extern UINT	g_sounds_thread_id;
 static BOOL is_autolining_up = FALSE;
 
 void WINAPI setIsAutolineupOn(BOOL new_auto_lineup){
@@ -15,7 +14,7 @@ void WINAPI setIsAutolineupOn(BOOL new_auto_lineup){
 
 
 	if (new_auto_lineup && !is_autolining_up){
-		AUTOLINEUP_Hook(g_hWnd,g_sounds_thread_id);
+		AUTOLINEUP_Hook(g_hWnd,GetCurrentThreadId());
 	}
 	else if (!new_auto_lineup && is_autolining_up){
 		AUTOLINEUP_UnHook();

@@ -19,7 +19,7 @@ Zero continues to mean FALSE. Missing or invalid values preserve current setting
 INI-003 - Explicit empty class lists clear old lists
 Given populated ignored/skinned class lists, when the INI contains an explicit empty
 value, reloading clears that list. A missing key preserves its current value.
-Audio-path loading remains outside this audit.
+Retired audio keys are ignored; see AU-003/AU-004 in audio-removal.feature.
 
 INI-004 - Dialog reload preserves live tray state
 Given runtime enabled/hidden state differs from persisted values, when Settings

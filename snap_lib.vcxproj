@@ -82,7 +82,6 @@
     <ClCompile Include="snap_InTests.c" />
     <ClCompile Include="snap_KeepToScreen.c" />
     <ClCompile Include="snap_lib.c" />
-    <ClCompile Include="snap_MouseSpeed.c" />
     <ClCompile Include="snap_MultiSz.c" />
     <ClCompile Include="snap_ResultStack.c" />
     <ClCompile Include="snap_testers.c" />
@@ -102,7 +101,6 @@
     <ClInclude Include="snap_InTests.h" />
     <ClInclude Include="snap_KeepToScreen.h" />
     <ClInclude Include="snap_lib.h" />
-    <ClInclude Include="snap_MouseSpeed.h" />
     <ClInclude Include="snap_MultiSz.h" />
     <ClInclude Include="snap_registry.h" />
     <ClInclude Include="snap_results.h" />

@@ -69,7 +69,6 @@ DBGMSG_LAST
 
 #define DMB(x)MessageBox(NULL,(x),_T("DEBUG"),MB_OK)
 #define MB_PRINTF(format){ TCHAR debug[100]; wsprintf(debug,format);MB(debug);}
-#define DBEEP {MessageBeep(-1);}
 #define DBG_MSG(hwnd,msg){PostMessage((hwnd),MYWM_DEBUG1,MAKEWPARAM(DBGMSGTYPE_PLAIN,msg),0L);}
 #define DBG_MSG_COND(hwnd,msg,cond) if((x))DBG_MSG((hwnd),(msg))
 #define DBG_MSG_SIDE_VAL(hwnd,msg,side,val){PostMessage((hwnd),MYWM_DEBUG1,MAKEWPARAM(DBGMSGTYPE_SIDE_VAL,msg),MAKELPARAM((WORD)side,(WORD)val));}
@@ -94,7 +93,6 @@ DBGMSG_LAST
 #else
 #define DMB(x)((void)0)
 #define MB_PRINTF(format)((void)0)
-#define DBEEP ((void)0)
 #define DBG_MSG(hwnd,msg)((void)0)
 #define DBG_MSG_COND(hwnd,msg,cond) ((void)0)
 #define DBG_MSG_SIDE_VAL(hwnd,msg,side,val)((void)0)

@@ -1025,26 +1025,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\snap_MouseSpeed.c"
-				>
-				<FileConfiguration
-					Name="Release UNICODE|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release UNICODE|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\snap_MultiSz.c"
 				>
 				<FileConfiguration
@@ -1399,10 +1379,6 @@
 			</File>
 			<File
 				RelativePath="snap_lib.h"
-				>
-			</File>
-			<File
-				RelativePath=".\snap_MouseSpeed.h"
 				>
 			</File>
 			<File

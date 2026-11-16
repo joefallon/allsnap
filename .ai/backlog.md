@@ -13,7 +13,7 @@ Canonical backlog for follow-up work. Execution details and verified results bel
 
 | ID | Item | Status and completion boundary |
 | --- | --- | --- |
-| B-003 | Remove all sound functionality | Requested; not started. Remove audio UI and previews, playback/thread code, event messages and callers, persistence entries, sound-only assets/resources, installer references, and exclusively audio dependencies. Preserve non-audio preferences in existing INI files. Add acceptance documentation and regression coverage for normal operation without audio. Do not restore disabled notification playback. |
+| B-003 | Remove all sound functionality | Implemented and independently reviewed in Phase 7: audio UI/preview, worker/messages/API/settings, exclusive assets/dependencies and packaging/source-help references removed. Legacy INI keys are ignored while other preferences remain intact. Final suite 286/286 in Debug/Release on both architectures; eight solution builds and Release import/export checks pass. The stale compiled CHM is retained as a historical archive rather than silently regenerated. |
 | B-004 | Create root README.md | Requested; not started. Document purpose, supported environment, build/test commands, usage, settings, dual-architecture operation, and known limitations. |
 | B-005 | Introduce a source folder structure | Requested; not started. Separate application, engine, resources, help, and tests; update project, resource, test, and installer references together. Keep moves separate from behavior changes. |
 | B-006 | Review ALLSNAPB naming | Requested; not started. The reason for the trailing B is unknown. Agree on consistent solution/project naming before renaming and update references together. |

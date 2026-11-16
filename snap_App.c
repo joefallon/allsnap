@@ -13,7 +13,6 @@
 #include "snap_settings.h"
 #include "snap_ini.h"
 #include "snap_mywm_msg.h"
-#include "snap_sounds.h"
 #include "snap_taskbar.h"
 #include "snap_debug.h"
 #include "snap_lineup.h"
@@ -31,12 +30,6 @@ HWND		g_hWnd;								//main window
 HANDLE			g_hMutex = NULL;					//ensures only one running
 HCURSOR			g_hcHand;							//pointer cursor
 HANDLE			g_hiPaypal;
-//HANDLE		g_htSnapSounds;
-
-HICON			g_hiPlay;
-HICON			g_hiStop;
-
-UINT			g_sounds_thread_id;
 
 OSVERSIONINFO	g_os;
 BOOL g_isXP;
@@ -124,15 +117,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		return FALSE;
 	}
 
-	g_sounds_thread_id = SnapSounds_BeginThread();
-	if (!SnapHookAll(g_hWnd,g_sounds_thread_id,g_os)){
+	if (!SnapHookAll(g_hWnd,g_os)){
 		DWORD error = GetLastError();
 		TCHAR error_message[160];
 		SnapDiagnostics_Record(SNAP_DIAG_HOOK_INSTALL,error);
 		wsprintf(error_message,_T("allSnap could not install its window hook (error %lu)."),error);
 		MessageBox(g_hWnd,error_message,_T("allSnap - Startup failed"),MB_OK|MB_ICONERROR);
-		if (g_sounds_thread_id != 0)
-			PostThreadMessage(g_sounds_thread_id,MYWM_CLOSETHREAD,0,0);
 		DestroyWindow(g_hWnd);
 		return 1;
 	}
@@ -181,7 +171,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	if (message_result == -1){
 		SnapDiagnostics_Record(SNAP_DIAG_MESSAGE_LOOP,GetLastError());
 	}
-	PostThreadMessage(g_sounds_thread_id,MYWM_CLOSETHREAD,0,0);
 
 	UnloadMyStuff();
 	//SaveSettingsToINI();
@@ -378,8 +367,6 @@ BOOL InitMyStuff(HINSTANCE hInstance){
 		MAKEINTRESOURCE(IDB_PAYPAL),
 		IMAGE_BITMAP,110,23,LR_LOADTRANSPARENT|LR_LOADMAP3DCOLORS);
 	
-	g_hiPlay = LoadIcon(hInstance,MAKEINTRESOURCE(IDI_PLAY));
-	g_hiStop =LoadIcon(hInstance,MAKEINTRESOURCE(IDI_STOP));
 
 	LoadSettingsFromINI();
 
@@ -396,8 +383,6 @@ BOOL InitMyStuff(HINSTANCE hInstance){
 BOOL UnloadMyStuff(void){
 	DeleteObject(g_hcHand);
 	DeleteObject(g_hiPaypal);
-	DestroyIcon(g_hiPlay);
-	DestroyIcon(g_hiStop);
 	//SaveSettingsToINI();
 /*
 	if (!SaveSettingsToRegistry()){
@@ -497,7 +482,6 @@ BOOL OnCommand (HWND hWnd, int id, HWND hwndCtl, UINT codeNotify){
 				return TRUE;
 			}
 			DeleteTaskbarIcon();
-			SnapSounds_Play(SOUND_UNSNAP);
 			DestroyWindow(hWnd);
 	}
 	return TRUE;
@@ -513,15 +497,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			return 0;
 
-		/*case MYWM_SNAPSOUND:
-			//ReplyMessage((LRESULT)TRUE);
-			SnapSounds_Play(SOUND_SNAP);
-			return FALSE;
-		break;
-		case MYWM_UNSNAPSOUND:
-			SnapSounds_Play(SOUND_UNSNAP);
-			return FALSE;
-		break;*/
 #ifdef _DEBUG
 		case WM_SETTEXT:
 			if (IsWindow(g_hwndDebug)){
@@ -543,8 +518,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			if (isIconHidden()){
                 setIconHidden(FALSE);
-			}else{
-				MessageBeep(MB_ICONHAND);
 			}
 			break;
 

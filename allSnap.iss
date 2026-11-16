@@ -26,8 +26,6 @@ Source: "Release\snap_libA.dll"; DestDir: "{app}"; MinVersion: 1, 0
 Source: "Release_UNICODE\snapToW.exe"; DestDir: "{app}"; DestName: "allSnap.exe"; MinVersion: 0, 1
 Source: "Release_UNICODE\snap_libW.dll"; DestDir: "{app}"; MinVersion: 0, 1
 Source: "Release\auto_lineup.dll"; DestDir: "{app}";
-Source: "snap.wav"; DestDir: "{app}"
-Source: "unsnap.wav"; DestDir: "{app}"
 Source: "allSnap.chm"; DestDir: "{app}"
 
 [Tasks]
@@ -99,8 +97,6 @@ Name: "{userstartup}\allSnap"; Filename: "{app}\allSnap.exe"; WorkingDir: "{app}
 ; if there is nothing left in them.
 Root: HKCU; Subkey: "Software\IvanHeckman"; Flags: uninsdeletekeyifempty
 Root: HKCU; Subkey: "Software\IvanHeckman\allSnap"; Flags: uninsdeletekey
-Root: HKCU; Subkey: "Software\IvanHeckman\allSnap\Settings"; ValueType: string; ValueName: "snap_sound_file"; ValueData: "{app}\snap.wav"
-Root: HKCU; Subkey: "Software\IvanHeckman\allSnap\Settings"; ValueType: string; ValueName: "unsnap_sound_file"; ValueData: "{app}\unsnap.wav"
 Root: HKCU; Subkey: "Software\IvanHeckman\allSnap\Settings"; ValueType: multisz; ValueName: "skinned_windows"; ValueData: "Shell_TrayWnd{break}icoCTactTrilly{break}ConsoleWindowClass{break}Winamp PE{break}Winamp EQ{break}Winamp MB{break}Winamp v1.x{break}BaseWindow_RootWnd"
 Root: HKCU; Subkey: "Software\IvanHeckman\allSnap\Settings"; ValueType: multisz; ValueName: "ignored_windows"; ValueData: "Progman{break}IDEOwner{break}NeilShadow"
 

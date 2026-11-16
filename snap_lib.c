@@ -11,12 +11,6 @@
 #include "snap_mywm_msg.h"
 #include "snap_lifecycle_test.h"
 
-#ifdef BEEPING
-#define BEEP {MessageBeep(-1);}
-#else
-#define BEEP
-#endif
-
 #ifdef _WIN64
 #define ALLSNAP_SUBCLASS_ID (477524932)
 #define WM_TO_SEND (WM_USER + 13)
@@ -57,7 +51,6 @@ typedef struct OWNER_SLOT {
 
 #pragma data_seg(SHARENAME)
 HWND	g_hWnd_app		= NULL;
-UINT	g_sounds_thread_id		= 0;
 
 gridsnap_settings_t g_gridsnap = {
 	{0,0,1},
@@ -73,7 +66,6 @@ UINT	g_crop_top				= 3;
 BOOL	g_is_cropping_top		= FALSE;
 BOOL	g_enabled				= TRUE;
 UINT	g_snap_type				= SNAPT_OTHERS | SNAPT_DESKTOP;
-BOOL	g_is_noisy				= FALSE;
 BOOL	g_snap_mdi				= FALSE;
 BOOL	g_is_disable_toggled	= TRUE;
 BOOL	g_snap_insides 			= TRUE;
@@ -467,7 +459,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDll, DWORD fdwReason, PVOID reserved)
 }
 #endif
 
-BOOL WINAPI SnapHookAll(HWND hwnd, UINT thread_id, OSVERSIONINFO os)
+BOOL WINAPI SnapHookAll(HWND hwnd, OSVERSIONINFO os)
 {
     HHOOK hook;
     if (!EnsureLifecyclePinned()) return FALSE;
@@ -482,7 +474,6 @@ BOOL WINAPI SnapHookAll(HWND hwnd, UINT thread_id, OSVERSIONINFO os)
     }
     g_hhook = hook;
     g_hWnd_app = hwnd;
-    g_sounds_thread_id = thread_id;
     g_os = os;
     InterlockedExchange(&g_hook_stopping, FALSE);
     return TRUE;
@@ -811,21 +802,6 @@ BOOL WINAPI isEnabled(void){
 
 void WINAPI setEnabled(BOOL enabled){
 	g_enabled = enabled;
-
-	/*if (enabled){
-		SnapHookAll(g_hWnd_app,g_thread_id);
-	}
-	else{
-		UnHookAll();
-	}*/
-}
-
-BOOL WINAPI isNoisy(void){
-	return	g_is_noisy;
-}
-
-void WINAPI setNoisy(BOOL is_noisy){
-	g_is_noisy = is_noisy;
 }
 
 BOOL WINAPI isCroppingTop(void){

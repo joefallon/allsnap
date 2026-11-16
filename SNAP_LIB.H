@@ -8,7 +8,6 @@
 #include "snap_grid.h"
 
 extern HWND g_hWnd_app;
-extern UINT g_sounds_thread_id;
 extern OSVERSIONINFO g_os;
 
 #define MAX_CLASSNAME_LENGTH 20		//assuming if the first 20 chars are the same that they are related enough to treat the same
@@ -19,13 +18,12 @@ extern OSVERSIONINFO g_os;
 #ifndef INTERNAL_INCLUDE
 /// functions called from other files within lib
 SNAPLIBAPI BOOL WINAPI SnapCanUnHook(void);
-SNAPLIBAPI BOOL WINAPI SnapHookAll(HWND hwnd,UINT thread_id,OSVERSIONINFO os);
+SNAPLIBAPI BOOL WINAPI SnapHookAll(HWND hwnd,OSVERSIONINFO os);
 SNAPLIBAPI BOOL WINAPI SnapUnHookAll(void);
 
 SNAPLIBAPI void WINAPI setGridSnap(gridsnap_settings_t const * p_grid_settings);
 SNAPLIBAPI void WINAPI setEnabled(BOOL enabled);
 SNAPLIBAPI void WINAPI setCroppingTop(BOOL enabled);
-SNAPLIBAPI void WINAPI setNoisy(BOOL noisy);
 SNAPLIBAPI void WINAPI setSnapMdi(BOOL snap_mdi);
 SNAPLIBAPI void WINAPI setDisableToggle(BOOL is_disable_toggle);
 SNAPLIBAPI void WINAPI setWinThresh(int thresh);
@@ -50,7 +48,6 @@ SNAPLIBAPI TCHAR * getIgnoredClasses(void);
 
 SNAPLIBAPI BOOL WINAPI isEnabled(void);
 SNAPLIBAPI BOOL WINAPI isCroppingTop(void);
-SNAPLIBAPI BOOL WINAPI isNoisy(void);
 SNAPLIBAPI BOOL WINAPI isSnapMdi(void);
 SNAPLIBAPI BOOL WINAPI isDisableToggle(void);
 SNAPLIBAPI int	WINAPI getWinThresh(void);

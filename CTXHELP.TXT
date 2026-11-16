@@ -16,21 +16,6 @@ Snap to the horizontal center of the screen(s).
 .topic IDH_ENABLED
 Enables window snapping.
 
-.topic IDH_PLAYSOUNDS
-Plays sounds when windows snap and unsnap.  (May become annoying)
-
-.topic IDH_UNSNAP_FILE
- .wav file that is played when a window un-snaps.
-
-.topic IDH_BROWSE_UNSNAP
-Click to select a new .wav file for the un-snapping sound
-
-.topic IDH_SNAP_FILE
- .wav file that is played when a window snaps.
-
-.topic IDH_BROWSE_SNAP
-Click to select a new .wav file for the snapping sound
-
 .topic IDH_TOGGLEKEYS
 Lists keys you can use to temporarily disable window snapping.
 
@@ -46,14 +31,8 @@ Choose what windows you can snap to.
 .topic IDH_GENERALL
 General settings
 
-.topic IDH_SOUNDS
-Sound settings
-
 .topic IDH_SNAPMDI
 Makes other applications' MDI windows snap.
-
-.topic IDH_QUIETFAST
-Don't play snap sounds when moving or sizing quickly across the screen.
 
 .topic IDH_INSIDES
 Don't snap windows to the inside edges of other windows.
@@ -63,9 +42,6 @@ Inverts the toggle key.            (press to enable snapping)
 
 .topic IDH_ADVL
 Advanced settings
-
-.topic IDH_PLAY
-Play the selected sound.
 
 .topic IDH_CROPTOP
 Used to fix XP styles in which the windows are taller than they appear.

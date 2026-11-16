@@ -14,7 +14,6 @@ void TestApp_Initialize(void);
 int TestApp_MessageCount(void);
 void SnapIni_TestSetPath(LPCTSTR path);
 INT_PTR CALLBACK PrefsProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK SoundsProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK AdvProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK GridProc(HWND, UINT, WPARAM, LPARAM);
 HWND DoPropertySheet(HWND);

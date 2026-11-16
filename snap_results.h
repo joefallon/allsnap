@@ -27,18 +27,4 @@ typedef struct SNAP_RESULTS_TAG{
 
 #define INSIDE_SNAP(srd)( (srd).side == (srd).to_side)
 
-#define NEW_SIDE_SNAP(sr_s,last_sr_s)(	 sr_s.side != SIDE_NONE					\
-									  && (   (sr_s.side  != last_sr_s.side)		\
-										   ||(sr_s.value != last_sr_s.value)))
-
-#define NEW_SIDE_UNSNAP(sr_s,last_sr_s)(	(sr_s.side==SIDE_NONE)  \
-										&&	(last_sr_s.side!=SIDE_NONE))
-
-#define NEW_SNAP(psr,last_psr)(   NEW_SIDE_SNAP((psr)->h,(last_psr)->h) \
-							   || NEW_SIDE_SNAP((psr)->v,(last_psr)->v))
-
-#define NEW_UNSNAP(psr,last_psr)( NEW_SIDE_UNSNAP((psr)->h,(last_psr)->h) \
-							   || NEW_SIDE_UNSNAP((psr)->v,(last_psr)->v))
-
-
 #endif

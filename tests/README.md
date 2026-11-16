@@ -39,7 +39,13 @@ and substitute only Shell_NotifyIcon; no icon is added to the user's taskbar.
 Window-filter tests use owned native top-level/MDI windows and the production
 collector with controlled work areas. Settings fixtures restore crop/key/class
 state and use temporary INI files. Context-help rendering, keyboard navigation,
-actual Explorer delivery, and audio are outside these automated checks.
+and actual Explorer delivery remain outside these automated checks.
+
+Sound-removal regressions verify the three-page native sheet and retired resource/
+API absence, retained snap geometry history, repeated lifecycle cleanup, and old
+audio INI keys being ignored without losing current preferences. No audio worker,
+playback code, or audio test adapters are compiled. Product binary inspection also
+checks Release EXE/DLL imports and exports for both architectures.
 
 Process-lifetime acceptance tests build `tests/process/allsnap_process_engine.vcxproj`
 and `allsnap_process_helper.vcxproj` through test-project references. Each scenario

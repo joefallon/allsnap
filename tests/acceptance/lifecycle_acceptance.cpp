@@ -54,7 +54,7 @@ namespace AllSnapTests
         {
             OSVERSIONINFO version = {};
             version.dwOSVersionInfoSize = sizeof(version);
-            return SnapHookAll(window, 0, version) != FALSE;
+            return SnapHookAll(window, version) != FALSE;
         }
         TEST_METHOD(HL001HookFailureIsReturnedToStartupCaller)
         {

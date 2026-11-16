@@ -23,8 +23,6 @@ Source: "Release\snapToA.exe"; DestDir: "{app}"
 Source: "Release\snap_libA.dll"; DestDir: "{app}"
 Source: "Release_UNICODE\snapToW.exe"; DestDir: "{app}"
 Source: "Release_UNICODE\snap_libW.dll"; DestDir: "{app}"
-Source: "snap.wav"; DestDir: "{app}"
-Source: "unsnap.wav"; DestDir: "{app}"
 Source: "ReadMe.txt"; DestDir: "{app}"; Flags: isreadme
 
 [Tasks]
@@ -49,8 +47,6 @@ Name: "{userstartup}\snapTo"; Filename: "{app}\snapTo.exe"; WorkingDir: "{app}";
 ; if there is nothing left in them.
 Root: HKCU; Subkey: "Software\ICH"; Flags: uninsdeletekeyifempty
 Root: HKCU; Subkey: "Software\ICH\snapTo"; Flags: uninsdeletekey
-Root: HKCU; Subkey: "Software\ICH\snapTo\Settings"; ValueType: string; ValueName: "snap_sound_file"; ValueData: "{app}\snap.wav"
-Root: HKCU; Subkey: "Software\ICH\snapTo\Settings"; ValueType: string; ValueName: "unsnap_sound_file"; ValueData: "{app}\unsnap.wav"
 
 [Run]
 Filename: "{app}\snapTo.EXE"; Description: "Launch application"; Flags: postinstall nowait skipifsilent unchecked

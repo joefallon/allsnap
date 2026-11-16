@@ -43,7 +43,6 @@ namespace AllSnapTests
     inline void ResetEngine()
     {
         setEnabled(TRUE);
-        setNoisy(FALSE);
         setSnapType(SNAPT_NONE);
         setKeptToScreen(FALSE);
         setSnappingInsides(TRUE);

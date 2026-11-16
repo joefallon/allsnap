@@ -4,7 +4,6 @@
 #include "snap_lib_internal.h"
 #include "snap_testers.h"
 #include "snap_WinRects.h"
-#include "snap_MouseSpeed.h"
 #include "snap_TrackResults.h"
 #include "snap_Crop.h"
 #include "snap_CenterSize.h"
@@ -124,7 +123,6 @@ void snapper_OnMoving(HWND hWnd, LPRECT pRect)
 		reposition(&unsnapped_position,&snap_results,pRect);
 	}
 	
-	MouseSpeed_Track();
 	TrackRslts_Track(&snap_results);
 
 	//DBG_MSG(g_hWnd_app,DBGMSG_MOVING_END);
@@ -140,7 +138,6 @@ void snapper_OnSizing(HWND hWnd, WPARAM which_edge,LPRECT pRect){
 	BOOL was_equal_sizing  = isEqualing();
 
 	
-	MouseSpeed_Track();
 
 	if (isToggled()){
 		RECT cropped_rect;
@@ -201,7 +198,6 @@ void snapper_OnSizing(HWND hWnd, WPARAM which_edge,LPRECT pRect){
 		clear_snap_results (&snap_results);
 	}
 
-	MouseSpeed_Track();
 	TrackRslts_Track(&snap_results);
 	//DBG_MSG(g_hWnd_app,DBGMSG_SIZING_END);
 }
@@ -289,7 +285,6 @@ void snapper_OnEnterSizeMove(HWND hWnd){
 	CenterSize_Init(hWnd);
 	EqualSize_Init(hWnd);
 
-	MouseSpeed_Reset();
 	TrackRslts_Reset();
 }
 /*

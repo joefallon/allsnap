@@ -6,7 +6,6 @@
 #include "stdafx.h"
 #include "snap_registry.h"
 #include "snap_lib.h"
-#include "snap_sounds.h"
 #include "snap_taskbar.h"
 #include "snap_lineup.h"
 #include "snap_grid.h"
@@ -73,9 +72,6 @@ BEGIN_SREG_MAP()
 	SREG_ENTRY(REGT_INT,	setWinThresh,			getWinThresh,		"win_tresh")
 	SREG_ENTRY(REGT_INT,	setScreenThresh,		getScreenThresh,	"screen_tresh")	
 	SREG_ENTRY(REGT_UINT,	setSnapType,			getSnapType,		"snap_type")
-	SREG_ENTRY(REGT_BOOL,	setNoisy,				isNoisy,			"play_sounds")
-	SREG_ENTRY(REGT_SZ,		setSnapSound,			getSnapSound,		"snap_sound_file")
-	SREG_ENTRY(REGT_SZ,		setUnsnapSound,			getUnsnapSound,		"unsnap_sound_file")
 	SREG_ENTRY(REGT_UINT,	setToggleKey,			getToggleKey,		"toggle_key")
 	SREG_ENTRY(REGT_UINT,	setCenterKey,			getCenterKey,		"center_key")
 	SREG_ENTRY(REGT_UINT,   setEqualKey,			getEqualKey,	    "equal_key")
@@ -140,9 +136,8 @@ BOOL INIgetStringVal(LPCTSTR value_name,TCHAR * string,int * p_ret_len,int max_l
 	*p_ret_len = result;
 
 	if (result != 0) return TRUE;
-	/* Only class lists use an explicit empty string as a value. Probe again
-	   with a nonempty default to distinguish absence without a magic sentinel
-	   collision for nonempty values. Keep legacy audio-path behavior unchanged. */
+	/* Probe again with a nonempty default to distinguish missing class lists
+	   from explicit empty values without a sentinel collision for nonempty values. */
 	if (_tcscmp(value_name,_T("ignored_classes")) == 0
 		|| _tcscmp(value_name,_T("skinned_classes")) == 0){
 		TCHAR missing[2];

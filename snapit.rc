@@ -114,22 +114,6 @@ BEGIN
     GROUPBOX        "General",IDC_GENERALL,7,7,198,76,BS_NOTIFY,0,HIDC_GENERALL
 END
 
-169 DIALOGEX 0, 0, 212, 188
-STYLE DS_SETFONT | WS_CHILD
-FONT 8, "MS Sans Serif", 0, 0, 0x1
-BEGIN
-    EDITTEXT        IDC_SNAP_FILE,44,31,88,12,ES_AUTOHSCROLL | ES_READONLY | NOT WS_TABSTOP,0,HIDC_SNAP_FILE
-    PUSHBUTTON      "Browse...",IDC_BROWSE_SNAP,155,30,44,14,0,0,HIDC_BROWSE_SNAP
-    PUSHBUTTON      ">",IDC_PLAY_SNAP,136,30,16,14
-    EDITTEXT        IDC_UNSNAP_FILE,44,65,88,12,ES_AUTOHSCROLL | ES_READONLY | NOT WS_TABSTOP,0,HIDC_UNSNAP_FILE
-    PUSHBUTTON      "Browse...",IDC_BROWSE_UNSNAP,155,64,44,14,0,0,HIDC_BROWSE_UNSNAP
-    PUSHBUTTON      ">",IDC_PLAY_UNSNAP,136,64,16,14
-    CONTROL         "&Play Sounds",IDC_PLAYSOUNDS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,105,55,10,0,HIDC_PLAYSOUNDS
-    GROUPBOX        "Snap Sounds",IDC_SOUNDSL,7,7,198,113,BS_NOTIFY
-    ICON            IDI_SPEAKER,IDC_STATIC,16,19,20,20
-    LTEXT           "Snap sound file:",IDC_SNAPFILEL,44,22,52,8,SS_NOTIFY,WS_EX_TRANSPARENT,HIDC_SNAPFILEL
-    LTEXT           "Unsnap sound file:",IDC_UNSNAPFILEL,44,56,88,8,SS_NOTIFY,WS_EX_TRANSPARENT,HIDC_UNSNAPFILEL
-END
 
 211 DIALOGEX 0, 0, 212, 188
 STYLE DS_SETFONT | WS_CHILD
@@ -353,9 +337,6 @@ IDI_SNAP_TOS            ICON                    "ico00003.ico"
 #if defined(APSTUDIO_INVOKED) || !defined(_WIN64)
 IDI_DISABLED            ICON                    "ico00001.ico"
 #endif
-IDI_SPEAKER             ICON                    "icon1.ico"
-IDI_PLAY                ICON                    "icon5.ico"
-IDI_STOP                ICON                    "ico00004.ico"
 IDI_XPDISABLED          ICON                    "xptray_disabled.ico"
 #if defined(APSTUDIO_INVOKED) || \
     !(defined(JUST_MOVING) || defined(_WIN64))
@@ -443,9 +424,6 @@ BEGIN
     BEGIN
     END
 
-    169, DIALOG
-    BEGIN
-    END
 
     211, DIALOG
     BEGIN
@@ -481,7 +459,6 @@ BEGIN
     IDS_VCENTER             "Snap to the vertical center of the screen(s)."
     IDS_HCENTER             "Snap to the horizontal center of the screen(s)."
     IDS_ENABLED             "Enables window snapping."
-    IDS_PLAYSOUNDS          "Plays sounds when windows snap and unsnap.\n(May become annoying)"
 END
 
 STRINGTABLE
@@ -519,22 +496,15 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_UNSNAP_FILE         " .wav file that is played when a window un-snaps."
-    IDS_BROWSE_UNSNAP       "Click to select a new .wav file for the un-snapping sound."
-    IDS_SNAP_FILE           " .wav file that is played when a window snaps."
-    IDS_BROWSE_SNAP         "Click to select a new .wav file for the snapping sound."
     IDS_TOGGLEKEYS          "Lists keys you can use to temporarily disable window snapping."
     IDS_SCREEN_THRESH       "Adjusts how close a window must be to the edge of the screen before it snaps."
     IDS_WIN_THRESH          "Adjusts how close two windows must be before they snap."
     IDS_SNAPTOL             "Choose what windows you can snap to."
     IDS_GENERALL            "General settings"
-    IDS_SOUNDS              "Sound settings"
     IDS_SNAPMDI             "Makes other applications' MDI windows snap."
-    IDS_QUIETFAST           "Don't play snap sounds when moving or sizing quickly across the screen."
     IDS_INSIDES             "Don't snap windows to the inside edges of other windows."
     IDS_INVTOGGLE           "Inverts the toggle key.\n(holding key enables snapping)"
     IDS_ADVL                "Advanced settings"
-    IDS_PLAY                "Plays the selected sound."
 END
 
 STRINGTABLE

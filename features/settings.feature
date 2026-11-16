@@ -2,9 +2,9 @@ Settings behavior reference
 
 These are documentation scenarios for Microsoft native acceptance tests. Tests use
 the actual settings resources/controllers and production INI code with hidden,
-test-owned dialogs and temporary INI files. Audio and tray APIs are boundary
-adapters, so these tests do not establish actual audio playback or system tray
-behavior. ST-010 onward also create the actual native modeless PropertySheet;
+test-owned dialogs and temporary INI files. System Shell notifications are
+intercepted, so these tests do not establish actual system tray behavior.
+ST-010 onward also create the actual native modeless PropertySheet;
 its owned windows are hidden, and no global hooks or user INI files are used.
 
 ST-001 — Initialize Preferences
@@ -48,7 +48,7 @@ then a failure message is requested and the page is kept open instead of
 reporting that settings were saved. Tests intercept only the message display.
 
 ST-008 — Apply acknowledgement and retry on every page
-Given any existing Preferences, Sounds, Grid, or Advanced page,
+Given any existing Preferences, Grid, or Advanced page,
 when its actual INI save fails, its dialog procedure acknowledges the notification
 and sets the property-sheet result to reject the Apply.
 When the destination is corrected and Apply is retried, the procedure acknowledges
@@ -75,7 +75,7 @@ Edits on Preferences, Grid, and Advanced are applied by native OK notifications.
 The modeless sheet reports closure, and edited values reload from its temporary INI.
 
 ST-012 — Native Cancel across pages
-Cancel discards unapplied edits on all visited non-sound pages without changing
+Cancel discards unapplied edits on all visited settings pages without changing
 engine values or the saved settings.
 
 ST-013 — Native Preferences validation and spinner endpoints
@@ -124,3 +124,10 @@ ST-022 — All grid modes and valid endpoints
 Both axes support all three modes and their valid endpoints through native Apply.
 Unselected edits do not invalidate the selected mode. System Shell notifications
 remain intercepted; these scenarios establish controller/persistence behavior.
+
+ST-023 — Settings without sound functionality
+The actual native sheet contains exactly Preferences, Snap to grid, and Advanced,
+in that order. Each tab opens the corresponding retained controls. The retired
+Sounds dialog resource (169) is absent from the application resource image.
+Existing native Apply, OK, Cancel, validation, save-failure/retry, and persistence
+scenarios run against the three-page sheet without audio fixture adapters.

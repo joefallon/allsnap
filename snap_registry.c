@@ -7,7 +7,6 @@
 #include "stdafx.h"
 #include "snap_registry.h"
 #include "snap_lib.h"
-#include "snap_sounds.h"
 #include "snap_taskbar.h"
 #include "snap_lineup.h"
 #include "snap_grid.h"
@@ -58,9 +57,6 @@ BEGIN_SREG_MAP()
 	SREG_ENTRY(REGT_INT,	setWinThresh,			getWinThresh,		"win_tresh")
 	SREG_ENTRY(REGT_INT,	setScreenThresh,		getScreenThresh,	"screen_tresh")	
 	SREG_ENTRY(REGT_UINT,	setSnapType,			getSnapType,		"snap_type")
-	SREG_ENTRY(REGT_BOOL,	setNoisy,				isNoisy,			"play_sounds")
-	SREG_ENTRY(REGT_SZ,		setSnapSound,			getSnapSound,		"snap_sound_file")
-	SREG_ENTRY(REGT_SZ,		setUnsnapSound,			getUnsnapSound,		"unsnap_sound_file")
 	SREG_ENTRY(REGT_UINT,	setToggleKey,			getToggleKey,		"toggle_key")
 	SREG_ENTRY(REGT_UINT,	setCenterKey,			getCenterKey,		"center_key")
 	SREG_ENTRY(REGT_UINT,   setEqualKey,			getEqualKey,	    "equal_key")
@@ -365,9 +361,6 @@ BOOL	LoadSettingsFromRegistryOld (void){
         setCropTop((int)Data);
 	}
 
-	if (getVal(myKey,szPlaySoundsValueName,(LPBYTE)&Data,&dwSize)){
-		setNoisy((BOOL)Data);
-	}
 
 	if (getVal(myKey,szIsCroppingTopValueName,(LPBYTE)&Data,&dwSize)){
 		setCroppingTop((BOOL)Data);
@@ -392,31 +385,6 @@ BOOL	LoadSettingsFromRegistryOld (void){
 		setToggleKey((UINT)Data);
 	}
 
-	if (!getStringVal(myKey,szSnapSoundValueName,path_buffer,MAX_PATH)){
-		getdir_result = 
-			GetCurrentDirectory(
-				MAX_PATH,
-				path_buffer
-			);
-
-		if (getdir_result!=0){
-            wsprintf(path_buffer,_T("%s\\%s"),path_buffer,aszDefaultSoundFiles[0]);
-		}
-	}
-	SnapSounds_setPath(SOUND_SNAP,path_buffer);
-
-	if (!getStringVal(myKey,szUnsnapSoundValueName,path_buffer,MAX_PATH)){
-		getdir_result = 
-			GetCurrentDirectory(
-				MAX_PATH,
-				path_buffer
-			);
-
-		if (getdir_result!=0){
-            wsprintf(path_buffer,_T("%s\\%s"),path_buffer,aszDefaultSoundFiles[1]);
-		}
-	}
-	SnapSounds_setPath(SOUND_UNSNAP,path_buffer);
 
 
 	RegCloseKey(myKey);
@@ -470,10 +438,6 @@ BOOL SaveSettingsToRegistryOld (void){
 		goto SSTR_END;
 	}
 
-	dwData = (DWORD)isNoisy();
-	if (!setVal(myKey,szPlaySoundsValueName,REG_DWORD,(LPBYTE)&dwData,sizeof(DWORD))){
-		goto SSTR_END;
-	}
 
 	dwData = (DWORD)isCroppingTop();
 	if (!setVal(myKey,szIsCroppingTopValueName,REG_DWORD,(LPBYTE)&dwData,sizeof(DWORD))){
@@ -503,13 +467,6 @@ BOOL SaveSettingsToRegistryOld (void){
 	}
 	
 
-	if (!setStringVal (myKey,szSnapSoundValueName,SnapSounds_getPath(SOUND_SNAP))){
-		goto SSTR_END;
-	}
-	
-	if (!setStringVal (myKey,szUnsnapSoundValueName,SnapSounds_getPath(SOUND_UNSNAP))){
-		goto SSTR_END;
-	}
 
 	fOK=TRUE;
 

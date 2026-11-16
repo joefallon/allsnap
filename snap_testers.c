@@ -217,12 +217,10 @@ INLINE void remove_inside_snaps(SNAP_RESULTS * p_results){
 	}
 
 	if (p_results->v.side == p_results->v.to_side){
-		//MessageBeep(-1);
 		DBG_MSG_SIDE_VAL(g_hWnd_app,DBGMSG_NONSIZINGSIDEREMOVED,p_results->v.side,p_results->v.value);
 		p_results->v.side = SIDE_NONE;
 	}
 	if (p_results->h.side == p_results->h.to_side){
-		//MessageBeep(-1);
 		DBG_MSG_SIDE_VAL(g_hWnd_app,DBGMSG_NONSIZINGSIDEREMOVED,p_results->h.side,p_results->h.value);
 		p_results->h.side = SIDE_NONE;
 	}

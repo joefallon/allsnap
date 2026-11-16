@@ -3,10 +3,7 @@
 #include <tchar.h>
 #include <limits.h>
 
-//stupid icon button
-#include <uxtheme.h>
 
-#include <Commdlg.h>
 #include <Prsht.h>
 #include <commctrl.h>
 #include "snap_tips.h"
@@ -19,7 +16,6 @@
 #include "resource.h"
 #include "snapper.h"
 #include "snap_lib.h"
-#include "snap_sounds.h"
 #include "snap_settings.h"
 #include "snap_taskbar.h"
 #include "snap_App.h"
@@ -102,20 +98,12 @@ static SNAP_TYPE_BOX snap_type_boxes[]={
 static const int num_snap_type_boxes = sizeof(snap_type_boxes)/sizeof(snap_type_boxes[0]);
 static UINT	thresh_boxes[] = {IDC_WIN_THRESH,IDC_SCREEN_THRESH,0};
 
-//======================================================================
-//stupid windows XP can't draw a BS_ICON button right
-//LRESULT CALLBACK MyIconButtonProc	(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-//void SubclassIconButton( HWND hButton);
-//========================================================================
-
-
 /*====================================================================
  Local Function Prototypes
 =====================================================================*/
 void	CALLBACK PropSheetCallback(HWND hwndPropSheet, UINT uMsg, LPARAM lParam);
 
 INT_PTR CALLBACK PrefsProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK SoundsProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK AdvProc(HWND,UINT,WPARAM,LPARAM);
 INT_PTR CALLBACK GridProc(HWND,UINT,WPARAM,LPARAM);
 
@@ -124,18 +112,15 @@ BOOL ValidateAdv(HWND hDlg);
 BOOL ValidateGrid(HWND hDlg);
 
 LRESULT Prefs_OnInitDialog	(HWND hwnd, HWND hwndFocus, LPARAM lParam);
-LRESULT Sounds_OnInitDialog	(HWND hwnd, HWND hwndFocus, LPARAM lParam);
 LRESULT Adv_OnInitDialog	(HWND hwnd, HWND hwndFocus, LPARAM lParam);
 LRESULT Grid_OnInitDialog	(HWND hwnd, HWND hwndFocus, LPARAM lParam);
 
 BOOL	OnContextMenu(HWND hWnd, HWND hwndCtl, UINT x, UINT y);
 BOOL	Prefs_OnCommand		(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify);
-BOOL	Sounds_OnCommand	(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify);
 BOOL	Adv_OnCommand		(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify);
 BOOL	Grid_OnCommand		(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify);
 
 void	Prefs_OnParentNotify(HWND hwnd, UINT msg, HWND hwndChild, int idChild);
-void	Sounds_OnParentNotify(HWND hwnd, UINT msg, HWND hwndChild, int idChild);
 
 
 void Grid_UpdateEnabledDim(	HWND hDlg,	int check_id,const int radios[],const int edits[]);
@@ -154,19 +139,16 @@ UINT	getNewSnapType(HWND hDlg);
 void	ApplyThresh(HWND hDlg);
 void	ApplyToggleKey(HWND hDlg);
 
-void	ApplySounds(HWND hDlg);
 
 void	ApplyAdv(HWND hDlg);
 
-void	TestSound(HWND hDlg,HWND hwndCtrl, enum SNAP_SOUNDS which_sound);
 
 UINT	getSelectedToggleKey	(HWND hDlg);
 //void	EnableButtons			(HWND hDlg,BOOL is_enabled);
-BOOL	BrowseFile				(HWND hDlg,enum SNAP_SOUNDS which_sound);
 
 void CenterWindow(HWND hwnd);
 
-// DoPropertySheet - creates a property sheet that contains two pages.
+// DoPropertySheet - creates a property sheet that contains three pages.
 // hwndOwner - handle to the owner window of the property sheet.
 //
 // Global variables
@@ -175,7 +157,7 @@ void CenterWindow(HWND hwnd);
 
 HWND DoPropertySheet(HWND hwndOwner)
 {
-    PROPSHEETPAGE psp[4];
+    PROPSHEETPAGE psp[3];
     PROPSHEETHEADER psh;
 
 	InitCmnCtls();
@@ -190,32 +172,23 @@ HWND DoPropertySheet(HWND hwndOwner)
     psp[0].lParam = 0;
     psp[0].pfnCallback = NULL;
 
-    psp[1].dwSize = sizeof(PROPSHEETPAGE);
+	psp[1].dwSize = sizeof(PROPSHEETPAGE);
     psp[1].dwFlags = PSP_USETITLE;
     psp[1].hInstance = g_hInst;
-    psp[1].pszTemplate = MAKEINTRESOURCE(IDD_SOUNDS);
-    psp[1].pfnDlgProc = SoundsProc;
-    psp[1].pszTitle = _T("Sounds");
+    psp[1].pszTemplate = MAKEINTRESOURCE(IDD_GRID);
+    psp[1].pfnDlgProc = GridProc;
+    psp[1].pszTitle = _T("Snap to grid");
     psp[1].lParam = 0;
     psp[1].pfnCallback = NULL;
 
 	psp[2].dwSize = sizeof(PROPSHEETPAGE);
     psp[2].dwFlags = PSP_USETITLE;
     psp[2].hInstance = g_hInst;
-    psp[2].pszTemplate = MAKEINTRESOURCE(IDD_GRID);
-    psp[2].pfnDlgProc = GridProc;
-    psp[2].pszTitle = _T("Snap to grid");
+    psp[2].pszTemplate = MAKEINTRESOURCE(IDD_ADVANCED);
+    psp[2].pfnDlgProc = AdvProc;
+    psp[2].pszTitle = _T("Advanced");
     psp[2].lParam = 0;
     psp[2].pfnCallback = NULL;
-
-	psp[3].dwSize = sizeof(PROPSHEETPAGE);
-    psp[3].dwFlags = PSP_USETITLE;
-    psp[3].hInstance = g_hInst;
-    psp[3].pszTemplate = MAKEINTRESOURCE(IDD_ADVANCED);
-    psp[3].pfnDlgProc = AdvProc;
-    psp[3].pszTitle = _T("Advanced");
-    psp[3].lParam = 0;
-    psp[3].pfnCallback = NULL;
 
     psh.dwSize = sizeof(PROPSHEETHEADER);
     psh.dwFlags = PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_MODELESS | PSH_USECALLBACK;
@@ -344,46 +317,7 @@ INT_PTR CALLBACK PrefsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 	return (FALSE);
 }
 
-INT_PTR CALLBACK SoundsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    LPNMHDR lpnmhdr;
-	
-	switch (message)
-	{
-		HANDLE_MSG(hDlg,WM_INITDIALOG,Sounds_OnInitDialog);
-		HANDLE_MSG(hDlg,WM_COMMAND,Sounds_OnCommand);
-		HANDLE_MSG(hDlg,WM_CONTEXTMENU,OnContextMenu);
-		
-			
-		case WM_HELP:
-			tips_show(((LPHELPINFO)lParam)->hItemHandle);
-			break;
-		case WM_NOTIFY:
-			lpnmhdr = (NMHDR FAR *)lParam;
 
-			switch (lpnmhdr->code)
-				{
-				case PSN_APPLY:   //sent when OK or Apply button pressed
-					SnapSounds_StopTest();
-					ApplySounds(hDlg);
-					SaveAppliedSettings(hDlg);
-					return TRUE;
-				case PSN_RESET:   //sent when Cancel button pressed
-					SnapSounds_StopTest();
-					break;
-				
-				case PSN_KILLACTIVE:
-					SnapSounds_StopTest();
-					return TRUE;
-
-				default:
-					break;
-				}
-			break;
-	}
-
-	return (FALSE);
-}
 INT_PTR CALLBACK AdvProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LPNMHDR lpnmhdr;
@@ -651,36 +585,7 @@ LRESULT Prefs_OnInitDialog(HWND hDlg, HWND hwndFocus, LPARAM lParam){
 	return TRUE;
 }
 
-LRESULT Sounds_OnInitDialog(HWND hDlg, HWND hwndFocus, LPARAM lParam){
-	BOOL new_is_noisy = isNoisy();
 
-	//CenterWindow(GetParent(hDlg));
-
-	//xp doesn't style icon buttons correctly
-	SetFocus(NULL);
-	if (!g_isXP){
-		HWND hBtn_1 = GetDlgItem(hDlg,IDC_PLAY_SNAP);
-		HWND hBtn_2 = GetDlgItem(hDlg,IDC_PLAY_UNSNAP);
-
-        LONG new_shared_style = GetWindowLong(hBtn_1,GWL_STYLE) | BS_ICON;
-        
-		SetWindowLong(hBtn_1,GWL_STYLE,new_shared_style);
-		SetWindowLong(hBtn_2,GWL_STYLE,new_shared_style);
-
-		SendDlgItemMessage(hDlg,IDC_PLAY_SNAP,BM_SETIMAGE,
-				(WPARAM)IMAGE_ICON,(LPARAM)g_hiPlay);
-		SendDlgItemMessage(hDlg,IDC_PLAY_UNSNAP,BM_SETIMAGE,
-				(WPARAM)IMAGE_ICON,(LPARAM)g_hiPlay);
-	}
-
-
-	Set_Checked(hDlg,IDC_PLAYSOUNDS,new_is_noisy);
-
-	SetDlgItemText(hDlg,IDC_SNAP_FILE,SnapSounds_getPath(SOUND_SNAP));
-	SetDlgItemText(hDlg,IDC_UNSNAP_FILE,SnapSounds_getPath(SOUND_UNSNAP));
-	
-	return TRUE;
-}
 
 
 
@@ -799,35 +704,7 @@ BOOL Prefs_OnCommand(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify){
 	return FALSE;
 }
 
-BOOL Sounds_OnCommand(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify){
-	BOOL changed = FALSE;
 
-	switch (id) {
-		case IDC_PLAYSOUNDS:
-			changed = TRUE;
-			break;
-
-		case IDC_BROWSE_SNAP:
-			changed = BrowseFile(hDlg,SOUND_SNAP);
-			break;
-
-		case IDC_BROWSE_UNSNAP:
-			changed = BrowseFile(hDlg,SOUND_UNSNAP);
-			break;
-
-		case IDC_PLAY_SNAP:
-			TestSound(hDlg,hwndCtl,SOUND_SNAP);
-			break;
-		case IDC_PLAY_UNSNAP:
-			TestSound(hDlg,hwndCtl,SOUND_UNSNAP);
-			break;
-	}
-	
-	if (changed){
-		PropSheet_Changed(GetParent(hDlg),hDlg);
-	}
-	return FALSE;
-}
 
 BOOL Adv_OnCommand(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify){
 	BOOL changed = FALSE;
@@ -838,7 +715,6 @@ BOOL Adv_OnCommand(HWND hDlg, int id, HWND hwndCtl, UINT codeNotify){
 		case IDC_CROPTOPC:
 			EnableWindow (GetDlgItem(hDlg,IDC_CROPTOP),Is_Checked(hDlg,IDC_CROPTOPC));
 		case IDC_SNAPMDI:
-		case IDC_QUIETFAST:
 		case IDC_INVTOGGLE:
 		case IDC_INSIDES:
 		case IDC_AUTOLINEUP:
@@ -1044,65 +920,11 @@ INLINE void ApplyPrefs(HWND hDlg){
 	
 }
 
-INLINE void ApplySounds(HWND hDlg){
-	BOOL new_is_noisy;
-	TCHAR path_buffer[MAX_PATH];
 
-	new_is_noisy = Is_Checked(hDlg,IDC_PLAYSOUNDS);
-	setNoisy(new_is_noisy);
-	
-	GetDlgItemText(hDlg,IDC_SNAP_FILE,path_buffer,MAX_PATH);
-	SnapSounds_setPath(SOUND_SNAP,path_buffer);
 
-	GetDlgItemText(hDlg,IDC_UNSNAP_FILE,path_buffer,MAX_PATH);
-	SnapSounds_setPath(SOUND_UNSNAP,path_buffer);
-}
 
-void TestSound(HWND hDlg,HWND hwndCtrl,enum SNAP_SOUNDS which_sound){
-	static BOOL snap_playing = FALSE;
-	static BOOL unsnap_playing = FALSE;
-	TCHAR file_name[MAX_PATH];
-	GetDlgItemText(
-		hDlg,
-		((which_sound==SOUND_SNAP)?
-			IDC_SNAP_FILE :
-			IDC_UNSNAP_FILE),
-		file_name,
-		MAX_PATH);
-//	SendMessage(hwndCtrl,BM_SETIMAGE,
-//			(WPARAM)IMAGE_ICON,(LPARAM)g_hiStop);
-	SnapSounds_Test(file_name);
-}
 
-BOOL BrowseFile(HWND hDlg,enum SNAP_SOUNDS which_sound){
 
-	TCHAR szFileName[MAX_PATH];
-	static BOOL first_time=TRUE;
-	OPENFILENAME ofn;
-
-	ZeroMemory(&ofn, sizeof(ofn));
-	
-	szFileName[0] = 0;
-
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = hDlg;
-	ofn.lpstrFilter = _T("Sounds (*.wav)\0*.WAV\0\0");
-	ofn.lpstrFile = szFileName;
-	ofn.nMaxFile = MAX_PATH;
-	ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_ALLOWMULTISELECT;
-	ofn.lpstrDefExt = _T("*.WAV");
-
-	if(GetOpenFileName(&ofn)){
-		SetDlgItemText(
-			hDlg,
-			(which_sound == SOUND_SNAP)? IDC_SNAP_FILE : IDC_UNSNAP_FILE,
-			ofn.lpstrFile);
-		return TRUE;
-	}
-	else{
-		return FALSE;
-	}
-}
 /*
 void EnableButtons(HWND hDlg,BOOL is_enabled){
 	int i=0;

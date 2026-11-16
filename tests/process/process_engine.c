@@ -52,10 +52,9 @@ BOOL __cdecl SnapProcessDispatch(DWORD command, HWND window, HANDLE entered, HAN
     case ProcessStartHook: {
         OSVERSIONINFO version = {0};
         version.dwOSVersionInfoSize = sizeof(version);
-        setNoisy(FALSE);
         setSnapType(SNAPT_NONE);
         setKeptToScreen(FALSE);
-        success = SnapHookAll(window, 0, version);
+        success = SnapHookAll(window, version);
         break;
     }
     case ProcessRegister:

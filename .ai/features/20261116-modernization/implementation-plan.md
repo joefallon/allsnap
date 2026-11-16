@@ -1,27 +1,28 @@
 # allSnap modernization implementation plan
 
-Status: Phase 6 non-sound Settings audit and demonstrated repairs implemented and independently reviewed. All 277 tests pass in Debug/Release on Win32/x64, and all eight solution builds pass. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
+Status: Phase 7 app sound removal is implemented and independently reviewed. All 286 tests pass in Debug/Release on Win32/x64, all eight solution builds pass, and Release binary imports/exports are verified. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
 
 ## Current position
 
 - Completed: source inspection of snapping, confinement, settings/candidates, hook/subclass lifecycle, startup, and sound handling.
 - Completed: verified local availability of Microsoft's native C++ testing headers, x86/x64 libraries, and VSTest runner. Approved as the common unit/acceptance framework; no dependencies installed.
 - Confirmed with user: root `features/*.feature` files are documentation only; no Gherkin tooling.
-- Confirmed with user: all sound functionality is to be removed in a future backlog increment.
-- Native unit/acceptance tests now cover 277 methods (94 unit, 183 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
+- Completed in Phase 7: all app sound functionality removed; historical compiled help is explicitly retained as an archive.
+- Native unit/acceptance tests now cover 286 methods (97 unit, 189 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
 - User handles all commits. Agents do not stage, commit, reset, or amend. Phase boundaries below are review checkpoints, not claims of commits already created.
 
 ## Milestones and human commit checkpoints
 
 | Phase | Reviewable scope | Current verification |
 | --- | --- | --- |
-| 1. Test foundation | Microsoft framework, runner, documentation, production-C fixture seams, initial confinement/snapping contracts | Implemented. Current suite: 277/277 in all four architecture/configuration runs. Later contract review corrected inherited assumptions rather than freezing legacy outputs. |
+| 1. Test foundation | Microsoft framework, runner, documentation, production-C fixture seams, initial confinement/snapping contracts | Implemented. Current suite: 286/286 in all four architecture/configuration runs. Later contract review corrected inherited assumptions rather than freezing legacy outputs. |
 | 2. Lifecycle reliability | Hook/subclass ownership and failures, safe shutdown bookkeeping, diagnostics | Initial failure-handling checkpoint passed 23 focused tests. Phase 5 supersedes scalar accounting and simulated ownership with a process-aware registry and actual child-process coverage. |
 | 3. Monitor/grid and Settings repairs | Workarea/guide separation, validation, Old position, Settings persistence and failure reporting, held-key semantics | Implemented. Geometry, Old position, input, validation reentrancy, Apply acknowledgement/retry, and opening-state regressions demonstrated red before repair; final suite green on both architectures. Remaining Settings paths require desktop validation. |
 | 4. Visible frames, spacing, and desktop geometry | DWM/region/manual crop composition, collapsed spacing UI/INI, ordinary/HiDPI coordinates, monitor union confinement | Implemented. Independent GDI coverage oracle plus native framed ordinary/Ctrl resize cases are green in the final matrix. Real mixed-DPI transitions and home-monitor checks remain pending. |
 | 5. Isolated process lifetime | Actual child-process termination/detach, concurrent owners, shutdown reservations, callback/module retention | Implemented and independently reviewed. Three product failures demonstrated before repair; 12 isolated-process methods and four new unit tests pass within the 222-test matrix. Global-hook/desktop validation remains separate. |
 | 6. Settings behavior audit | Non-sound controls, actual property sheet, tray boundary, persisted validation, MDI and class filtering | Implemented and independently reviewed. Added 55 methods; final 277-test matrix and all eight builds pass. Actual Shell/global-hook delivery and manual UX/hardware checks remain separate. |
-| Later backlog phases | Audio removal; README; folder organization; naming; Clean Code refactoring | Not started; keep behavioral, structural, and naming changes separate. |
+| 7. Sound removal | Audio UI/preview, worker/messages/settings/API, audio assets/help/packaging and exclusive dependencies | Implemented and independently reviewed. Two native UI absence regressions failed before removal; final 286-test matrix, eight builds, and actual Release import/export checks pass. |
+| Later backlog phases | README; folder organization; naming; Clean Code refactoring | Not started; keep behavioral, structural, and naming changes separate. |
 ## Execution sequence
 
 ### 1. Establish the test foundation and protect confinement
@@ -119,6 +120,23 @@ All eight solution builds passed after the final MDI grid correction. TRX files 
 
 Limits: native functional controls are covered, but context-help rendering, keyboard focus/tab order, actual Explorer notifications, host tray-menu command dispatch, and real desktop/global-hook/DPI/long-duration behavior still need validation. Apply persistence remains sequential, with no atomic rollback guarantee on save failure. These checks do not diagnose the reported intermittent stop or certify every setting combination.
 
+## Phase 7 execution: remove app sound functionality
+
+The user committed Phase 6 before authorizing this increment. Removed the Sounds property page, preview/browse controller code, audio help/resource IDs and play/stop globals; Settings now contains Preferences, Snap to grid, and Advanced. Updated retained native tests for the new page indices and removed only the obsolete Sounds-page Apply test. Two new native absence tests failed against the old four-page/resource image before deletion.
+
+Removed playback/worker sources, audio message posts/IDs, noisy settings and shared audio thread ID, the hook API's audio argument, and sound-only speed tracking and transition macros. Kept last-result copy/reset and geometry consumers intact. All app/DLL/process-test callers now use SnapHookAll(hwnd, os), so matching rebuilt EXE/DLL pairs are required. Generic thread helpers and shared dialog/help libraries remain; no ownership-registry redesign was included.
+
+Removed audio mappings from INI and guarded registry code, audio defaults from the checked-in INI, WAVs/play-stop/speaker assets, exclusive WinMM linkage, old/current project references, installer media/default rows, explicit app/debug beeps, and audio sections in source help/context files. Old audio INI keys are ignored without altering other preferences; fresh saves create none, and existing unknown/retired keys remain untouched. The dormant unsupported lineup call uses the existing host thread rather than a deleted worker; its absent plugin is not certified. The mixed-content historical snapTo.chm is retained as an archive and was not rebuilt; source help is updated, and the existing compiled-help/installer modernization limits remain.
+
+Regression coverage adds ten methods: two UI/resource absence, three tracking/continued move-resize/reset, two retired API/repeated controlled lifecycle, and three fresh/legacy INI preservation cases. One obsolete Sounds-page-only method is removed, taking the suite from 277 to 286. Focused UI tests passed 48/48, runtime/lifecycle/geometry tests 120/120, and INI removal tests 3/3. Independent review checked actual source, resource, dependency and packaging changes and found no required correction.
+
+| Platform | Debug full suite | Release full suite | Separate Release filters |
+| --- | --- | --- | --- |
+| Win32 | 286/286 | 286/286 | Unit 97/97; Acceptance 189/189 |
+| x64 | 286/286 | 286/286 | Unit 97/97; Acceptance 189/189 |
+
+All eight solution builds passed. Actual Release EXE/DLL imports show no WinMM/multimedia playback dependency, DLL exports contain no retired audio setters/getters, and each EXE imports its matching rebuilt hook entry point (Win32 _SnapHookAll@280, x64 SnapHookAll). Project XML and residual source/build/installer references were reviewed. Artifacts remain under ignored build/ directories. No global hooks, production app launches, audio playback, dependency installations, user INI changes, staging, or commits were performed. Main-host startup/shutdown was inspected and built; runtime tests exercise the controlled hook/subclass boundary rather than an actual global-hook launch.
+
 ## Per-increment record
 
 For each implemented increment, record its completed scope, changed behavior, relevant feature/scenario IDs, executed unit/acceptance/build results by architecture, review outcome, and remaining limitations. Update statuses as work occurs; do not treat planned checks as passing checks. The first foundation baseline was 29/29 on each architecture; current results supersede that count without treating the baseline as proof of legacy correctness.
@@ -151,6 +169,6 @@ Remaining verification and design work:
 
 - Run actual x86/x64 target-application hook startup, repeated gestures, exit, and a long-duration trial. Phase 5 covers isolated termination and callback retention, but does not certify actual global-hook delivery or diagnose the reported intermittent stop.
 - Check representative applications at 100% and on the current HiDPI display, then mixed-DPI monitor transitions and the older home monitor. UI compatibility scaling is approved; fractional caller coordinates can round physical spacing to a representable value.
-- Phase 6 now exercises native property-sheet controls, owned MDI/class filtering, and the real tray controller through a substituted Shell boundary. Still validate actual Explorer delivery, host menu dispatch, context help and keyboard navigation. Disabled aspect-ratio/auto-lineup features remain disabled; audio remains deferred.
+- Phases 6/7 exercise the retained native property-sheet controls, owned MDI/class filtering, and the real tray controller through a substituted Shell boundary. Still validate actual Explorer delivery, host menu dispatch, context help and keyboard navigation. Disabled aspect-ratio/auto-lineup features remain disabled; app audio has been removed.
 - Preserve explicit impossible-fit limits: oversized movement uses an accessible-origin fallback; ordinary resizing does not translate an outside fixed edge; centered resizing cannot always fit if its original center is outside the desktop.
-- Review this checkpoint with the user before starting the separately listed audio, layout, naming, and refactoring backlog phases. The user owns commits.
+- Review this checkpoint with the user before starting the separately listed README, layout, naming, and refactoring backlog phases. The user owns commits.

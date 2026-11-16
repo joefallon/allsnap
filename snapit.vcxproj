@@ -62,7 +62,7 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;winmm.lib;htmlhelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;htmlhelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -81,7 +81,6 @@
     <ClCompile Include="snap_ini.c" />
     <ClCompile Include="snap_registry.c" />
     <ClCompile Include="snap_settings.c" />
-    <ClCompile Include="snap_sounds.c" />
     <ClCompile Include="snap_taskbar.c" />
     <ClCompile Include="snap_tips.c" />
   </ItemGroup>
@@ -97,7 +96,6 @@
     <ClInclude Include="snap_mywm_msg.h" />
     <ClInclude Include="snap_registry.h" />
     <ClInclude Include="snap_settings.h" />
-    <ClInclude Include="snap_sounds.h" />
     <ClInclude Include="snap_taskbar.h" />
     <ClInclude Include="snap_tips.h" />
     <ClInclude Include="StdAfx.h" />
@@ -130,16 +128,13 @@
     <Image Include="ico00001.ico" />
     <Image Include="ico00002.ico" />
     <Image Include="ico00003.ico" />
-    <Image Include="ico00004.ico" />
     <Image Include="ico00005.ico" />
     <Image Include="ico00006.ico" />
     <Image Include="ico00007.ico" />
     <Image Include="ico00008.ico" />
     <Image Include="ico00009.ico" />
-    <Image Include="icon1.ico" />
     <Image Include="icon2.ico" />
     <Image Include="icon3.ico" />
-    <Image Include="Icon5.ico" />
     <Image Include="others.bmp" />
     <Image Include="others_d.ico" />
     <Image Include="self_dis.ico" />

@@ -85,7 +85,6 @@
     <ClCompile Include="..\snap_InTests.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
     <ClCompile Include="..\snap_KeepToScreen.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
     <ClCompile Include="..\snap_lib.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
-    <ClCompile Include="..\snap_MouseSpeed.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
     <ClCompile Include="..\snap_MultiSz.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
     <ClCompile Include="..\snap_ResultStack.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
     <ClCompile Include="..\snap_testers.c"><CompileAs>CompileAsC</CompileAs></ClCompile>

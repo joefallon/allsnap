@@ -36,9 +36,6 @@
     <ClCompile Include="snap_settings.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="snap_sounds.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="snap_taskbar.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -75,9 +72,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="snap_settings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="snap_sounds.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="snap_taskbar.h">
@@ -171,9 +165,6 @@
     <Image Include="ico00003.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="ico00004.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="ico00005.ico">
       <Filter>Resource Files</Filter>
     </Image>
@@ -189,16 +180,10 @@
     <Image Include="ico00009.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="icon1.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="icon2.ico">
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="icon3.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="Icon5.ico">
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="others.bmp">

@@ -45,7 +45,6 @@ BOOL should_we_crop_this(HWND hwnd){
 		if (pfnOpenThemeData!=NULL){
             hthm = pfnOpenThemeData(hwnd,L"Window, WINDOW");
 			if (hthm==NULL){
-				MessageBeep(-1);
 			}
 			return (hthm != NULL);
 		}

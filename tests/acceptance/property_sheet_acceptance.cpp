@@ -29,9 +29,9 @@ namespace AllSnapTests
         {
             SettingsFixture fixture;
             HWND sheet = fixture.OpenSheet();
-            HWND page = SettingsFixture::SelectPage(sheet, 2);
+            HWND page = SettingsFixture::SelectPage(sheet, 1);
             SetGridAxis(page, horizontal, mode, value);
-            Assert::IsFalse(PropSheet_SetCurSel(sheet, nullptr, 3) != FALSE,
+            Assert::IsFalse(PropSheet_SetCurSel(sheet, nullptr, 2) != FALSE,
                 L"Invalid selected grid input must keep its native page active.");
             Assert::IsTrue(page == PropSheet_GetCurrentPageHwnd(sheet));
             Assert::AreEqual(1, TestApp_MessageCount());
@@ -41,7 +41,7 @@ namespace AllSnapTests
         {
             SettingsFixture fixture;
             HWND sheet = fixture.OpenSheet();
-            HWND page = SettingsFixture::SelectPage(sheet, 3);
+            HWND page = SettingsFixture::SelectPage(sheet, 2);
             SettingsFixture::Click(page, IDC_CROPTOPC);
             Assert::IsTrue(SetDlgItemTextW(page, IDC_CROPTOP, value) != FALSE);
             WCHAR actual[32] = {};
@@ -90,10 +90,10 @@ namespace AllSnapTests
             HWND preferences = PropSheet_GetCurrentPageHwnd(sheet);
             SetDlgItemInt(preferences, IDC_SCREEN_THRESH, 31, FALSE);
             SettingsFixture::Click(preferences, IDC_DESKTOP);
-            HWND grid = SettingsFixture::SelectPage(sheet, 2);
+            HWND grid = SettingsFixture::SelectPage(sheet, 1);
             SetGridAxis(grid, true, GRIDTYPE_PIXELS, L"37");
             SetGridAxis(grid, false, GRIDTYPE_SINGLE, L"240");
-            HWND advanced = SettingsFixture::SelectPage(sheet, 3);
+            HWND advanced = SettingsFixture::SelectPage(sheet, 2);
             SettingsFixture::Click(advanced, IDC_KEPT);
             SettingsFixture::Click(advanced, IDC_CROPTOPC);
             SetDlgItemInt(advanced, IDC_CROPTOP, 7, FALSE);
@@ -117,15 +117,15 @@ namespace AllSnapTests
             Assert::AreEqual(240, saved.v.val);
         }
 
-        // ST-012: native Cancel discards edits on every non-sound page.
+        // ST-012: native Cancel discards edits on every settings page.
         TEST_METHOD(NativeCancelDoesNotApplyVisitedPages)
         {
             SettingsFixture fixture;
             Assert::IsTrue(SaveSettingsToINI());
             HWND sheet = fixture.OpenSheet();
             SetDlgItemInt(PropSheet_GetCurrentPageHwnd(sheet), IDC_WIN_THRESH, 45, FALSE);
-            SetGridAxis(SettingsFixture::SelectPage(sheet, 2), true, GRIDTYPE_PIXELS, L"37");
-            SettingsFixture::Click(SettingsFixture::SelectPage(sheet, 3), IDC_KEPT);
+            SetGridAxis(SettingsFixture::SelectPage(sheet, 1), true, GRIDTYPE_PIXELS, L"37");
+            SettingsFixture::Click(SettingsFixture::SelectPage(sheet, 2), IDC_KEPT);
             SettingsFixture::Press(sheet, PSBTN_CANCEL);
             Assert::IsNull(PropSheet_GetCurrentPageHwnd(sheet));
             Assert::AreEqual(10, getWinThresh());
@@ -143,14 +143,14 @@ namespace AllSnapTests
             HWND sheet = fixture.OpenSheet();
             HWND page = PropSheet_GetCurrentPageHwnd(sheet);
             SetDlgItemInt(page, IDC_WIN_THRESH, 1, FALSE);
-            Assert::IsFalse(PropSheet_SetCurSel(sheet, nullptr, 2) != FALSE);
+            Assert::IsFalse(PropSheet_SetCurSel(sheet, nullptr, 1) != FALSE);
             Assert::IsTrue(page == PropSheet_GetCurrentPageHwnd(sheet));
             SettingsFixture::Press(sheet, PSBTN_OK);
             Assert::IsTrue(page == PropSheet_GetCurrentPageHwnd(sheet));
             Assert::AreEqual(10, getWinThresh());
             SetDlgItemInt(page, IDC_WIN_THRESH, 2, FALSE);
             SetDlgItemInt(page, IDC_SCREEN_THRESH, 100, FALSE);
-            Assert::IsTrue(PropSheet_SetCurSel(sheet, nullptr, 2) != FALSE);
+            Assert::IsTrue(PropSheet_SetCurSel(sheet, nullptr, 1) != FALSE);
         }
 
         TEST_METHOD(ThresholdSpinnersIncludeValidatedUpperEndpoint)
@@ -190,7 +190,7 @@ namespace AllSnapTests
             setGridSnap(&original);
             Assert::IsTrue(SaveSettingsToINI());
             HWND sheet = fixture.OpenSheet();
-            HWND page = SettingsFixture::SelectPage(sheet, 2);
+            HWND page = SettingsFixture::SelectPage(sheet, 1);
             SetGridAxis(page, true, GRIDTYPE_EVEN, L"101");
             SettingsFixture::Press(sheet, PSBTN_APPLYNOW);
             gridsnap_settings_t actual = {};
@@ -208,7 +208,7 @@ namespace AllSnapTests
             gridsnap_settings_t original = {{TRUE, GRIDTYPE_PIXELS, 37}, {TRUE, GRIDTYPE_SINGLE, 240}};
             setGridSnap(&original);
             HWND sheet = fixture.OpenSheet();
-            HWND page = SettingsFixture::SelectPage(sheet, 2);
+            HWND page = SettingsFixture::SelectPage(sheet, 1);
             SettingsFixture::Click(page, IDC_CHECK_HORIZONTAL, false);
             SettingsFixture::Click(page, IDC_CHECK_VERTICAL, false);
             SettingsFixture::Press(sheet, PSBTN_APPLYNOW);
@@ -233,7 +233,7 @@ namespace AllSnapTests
             SettingsFixture fixture;
             setCropTop(7);
             HWND sheet = fixture.OpenSheet();
-            HWND page = SettingsFixture::SelectPage(sheet, 3);
+            HWND page = SettingsFixture::SelectPage(sheet, 2);
             SettingsFixture::Click(page, IDC_CROPTOPC);
             SetDlgItemTextW(page, IDC_CROPTOP, L"abc");
             SettingsFixture::Press(sheet, PSBTN_APPLYNOW);
@@ -307,7 +307,7 @@ namespace AllSnapTests
         {
             SettingsFixture fixture;
             HWND sheet = fixture.OpenSheet();
-            HWND page = SettingsFixture::SelectPage(sheet, 3);
+            HWND page = SettingsFixture::SelectPage(sheet, 2);
             struct Checkbox { int control; BOOL (WINAPI *get)(); bool inverted; };
             const Checkbox boxes[] = {
                 {IDC_SNAPMDI, isSnapMdi, false}, {IDC_INVTOGGLE, isDisableToggle, true},
@@ -331,7 +331,7 @@ namespace AllSnapTests
         TEST_METHOD(GridCheckboxesEnableOnlyTheirOwnAxisControls)
         {
             SettingsFixture fixture;
-            HWND page = SettingsFixture::SelectPage(fixture.OpenSheet(), 2);
+            HWND page = SettingsFixture::SelectPage(fixture.OpenSheet(), 1);
             const int horizontal[] = {IDC_RADIO_H_EVEN, IDC_RADIO_H_PIXELS, IDC_RADIO_H_SINGLE,
                 IDC_H_NUM_EVEN, IDC_H_PIXELS_BTWN, IDC_H_PIXELS_FROM_TOP};
             const int vertical[] = {IDC_RADIO_V_EVEN, IDC_RADIO_V_PIXELS, IDC_RADIO_V_SINGLE,
@@ -352,7 +352,7 @@ namespace AllSnapTests
         {
             SettingsFixture fixture;
             HWND sheet = fixture.OpenSheet();
-            HWND page = SettingsFixture::SelectPage(sheet, 2);
+            HWND page = SettingsFixture::SelectPage(sheet, 1);
             for (bool horizontal : {true, false}) {
                 for (int mode : {GRIDTYPE_EVEN, GRIDTYPE_PIXELS, GRIDTYPE_SINGLE}) {
                     const int minimum = mode == GRIDTYPE_PIXELS ? 1 : 0;
@@ -382,7 +382,7 @@ namespace AllSnapTests
         {
             SettingsFixture fixture;
             HWND sheet = fixture.OpenSheet();
-            HWND page = SettingsFixture::SelectPage(sheet, 3);
+            HWND page = SettingsFixture::SelectPage(sheet, 2);
             Assert::IsFalse(IsWindowEnabled(GetDlgItem(page, IDC_CROPTOP)) != FALSE);
             SettingsFixture::Click(page, IDC_CROPTOPC);
             Assert::IsTrue(IsWindowEnabled(GetDlgItem(page, IDC_CROPTOP)) != FALSE);

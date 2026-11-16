@@ -10,18 +10,12 @@
 DWORD mapID(DWORD ctrlid);
 
 static DWORD tiptable[]={IDC_STATIC						,0
-,IDC_SOUNDSL					,IDS_SOUNDS
 ,IDC_MYHAND                      ,0
 ,IDC_SNAPIT                      ,0
 ,IDC_DESKTOP                     ,IDS_DESKTOP         
 ,IDC_SELF                        ,IDS_SELF            
 ,IDC_OTHERS                      ,IDS_OTHERS          
 ,IDC_ENABLED                     ,IDS_ENABLED         
-,IDC_PLAYSOUNDS                  ,IDS_PLAYSOUNDS      
-,IDC_UNSNAP_FILE                 ,IDS_UNSNAP_FILE     
-,IDC_BROWSE_UNSNAP               ,IDS_BROWSE_UNSNAP   
-,IDC_SNAP_FILE                   ,IDS_SNAP_FILE       
-,IDC_BROWSE_SNAP                 ,IDS_BROWSE_SNAP     
 ,IDC_TOGGLEKEYS                  ,IDS_TOGGLEKEYS      
 ,IDC_LINK                        ,0                  
 ,IDC_WIN_THRESH					 ,IDS_WIN_THRESH
@@ -33,19 +27,14 @@ static DWORD tiptable[]={IDC_STATIC						,0
 ,IDC_SCREEN_THRESH_SPIN			 ,IDS_SCREEN_THRESH
 ,IDC_SNAPATL2                    ,IDS_SCREEN_THRESH         
 ,IDC_PIXELSL2					 ,IDS_SCREEN_THRESH         
-,IDC_SNAPFILEL                   ,IDS_SNAP_FILE    
 ,IDC_TOGGLEKEYL                  ,IDS_TOGGLEKEYS      
 ,IDC_GENERALL                    ,IDS_GENERALL        
 
-,IDC_UNSNAPFILEL                 ,IDS_UNSNAP_FILE     
 ,IDC_CHOSEL                      ,IDS_SNAPTOL
 ,IDC_SNAPMDI					 ,IDS_SNAPMDI
-,IDC_QUIETFAST					 ,IDS_QUIETFAST
 ,IDC_INSIDES					 ,IDS_INSIDES
 ,IDC_INVTOGGLE					 ,IDS_INVTOGGLE
 ,IDC_ADVL						 ,IDS_ADVL
-,IDC_PLAY_UNSNAP				 ,IDS_PLAY
-,IDC_PLAY_SNAP			 ,IDS_PLAY
 ,IDC_CROPTOP					 ,IDS_CROPTOP
 ,IDC_CROPTOPL					 ,IDS_CROPTOP
 ,IDC_CROPTOPC					 ,IDS_CROPTOP

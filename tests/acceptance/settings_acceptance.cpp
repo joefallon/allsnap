@@ -234,10 +234,6 @@ namespace AllSnapTests
         {
             AssertApplyFailureAndRetry(IDD_GENERAL, PrefsProc);
         }
-        TEST_METHOD(SoundsApplyHandlesFailureAndSuccessfulRetry)
-        {
-            AssertApplyFailureAndRetry(IDD_SOUNDS, SoundsProc);
-        }
         TEST_METHOD(GridApplyHandlesFailureAndSuccessfulRetry)
         {
             AssertApplyFailureAndRetry(IDD_GRID, GridProc);
