@@ -15,7 +15,7 @@ From the repository root:
 
 The default builds and runs Debug tests for Win32 and x64 sequentially. Test DLLs
 and TRX results go under ignored `build/` directories. All tests are also available
-in Visual Studio's Test Explorer after building `allsnap_tests` in `ALLSNAPB.sln`.
+in Visual Studio's Test Explorer after building `allsnap_tests` in `allsnap.sln`.
 
 The project compiles production C sources as C, with C++ used only for the native
 test harness. Acceptance tests combine actual matching, confinement, and

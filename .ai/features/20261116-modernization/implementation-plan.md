@@ -1,6 +1,6 @@
 # allSnap modernization implementation plan
 
-Status: Phase 9 organizes source, resources, help, packaging, and historical material after the user committed Phase 8. Production C/header/resource contents are unchanged. Test execution was not requested for this structural milestone; the last test results remain Phase 7 (286/286 in Debug/Release on Win32/x64). Build and reference verification are recorded under Phase 9 below. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
+Status: Phase 10 cleans up solution/application-project naming after the user committed Phase 9. Production code, runtime names, GUIDs, configurations, and output paths are unchanged. Test execution was not requested for this naming milestone; the last test results remain Phase 7 (286/286 in Debug/Release on Win32/x64). Build and reference verification are recorded under Phase 10 below. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
 
 ## Current position
 
@@ -10,6 +10,7 @@ Status: Phase 9 organizes source, resources, help, packaging, and historical mat
 - Completed in Phase 7: all app sound functionality removed; historical compiled help is explicitly retained as an archive.
 - Completed in Phase 8: root README covering build/run commands, settings, dual-architecture operation, tests, source navigation, and known limitations.
 - Completed in Phase 9: folder organization with project/include/filter, installer-input, help-output, and documentation references updated; behavior and project naming preserved.
+- Completed in Phase 10: root solution/application project/filter filenames align with the existing `allsnap` project name; references updated without renaming runtime binaries or source symbols.
 - Native unit/acceptance tests now cover 286 methods (97 unit, 189 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
 - User handles all commits. Agents do not stage, commit, reset, or amend. Phase boundaries below are review checkpoints, not claims of commits already created.
 
@@ -26,7 +27,8 @@ Status: Phase 9 organizes source, resources, help, packaging, and historical mat
 | 7. Sound removal | Audio UI/preview, worker/messages/settings/API, audio assets/help/packaging and exclusive dependencies | Implemented and independently reviewed. Two native UI absence regressions failed before removal; final 286-test matrix, eight builds, and actual Release import/export checks pass. |
 | 8. Repository README | Build/run/configuration/test instructions, source navigation, and known limitations | Complete and independently reviewed; commands, claims, and local links checked against source. No builds or tests rerun. |
 | 9. Folder organization | Separate app, engine, common code, resources, help, packaging, and legacy material | Complete and independently reviewed. Moved C/headers/resources unchanged; all eight solution builds pass, project/local-link checks pass; no tests executed. |
-| Later backlog phases | Naming; Clean Code refactoring | Not started; keep behavioral, structural, and naming changes separate. |
+| 10. Solution/project naming | `allsnap.sln`, `allsnap.vcxproj`, matching filters and active references | Complete and independently reviewed; all eight solution builds, reference/metadata checks, and whitespace checks pass. No tests executed. |
+| Later backlog phases | Clean Code refactoring | Not started; keep behavioral, structural, and naming changes separate. |
 ## Execution sequence
 
 ### 1. Establish the test foundation and protect confinement
@@ -77,7 +79,7 @@ Verification: unit/acceptance results on both architectures plus native test-own
 
 ## Backlog
 
-The canonical list is [`.ai/backlog.md`](../../backlog.md), with stable item IDs and separate requested/proposed work. Next priorities are B-001 (actual desktop/process-lifetime verification) and B-002 (remaining Settings coverage). Audio removal, the README, and folder organization are complete; naming and Clean Code work remain separate follow-up milestones. A single launcher/tray is proposed and would still manage both helper architectures.
+The canonical list is [`.ai/backlog.md`](../../backlog.md), with stable item IDs and separate requested/proposed work. Next priorities are B-001 (actual desktop/process-lifetime verification) and B-002 (remaining Settings coverage). Audio removal, the README, folder organization, and naming cleanup are complete; Clean Code work remains a separate follow-up milestone. A single launcher/tray is proposed and would still manage both helper architectures.
 
 ## Phase 5 execution
 
@@ -175,7 +177,7 @@ Remaining verification and design work:
 - Check representative applications at 100% and on the current HiDPI display, then mixed-DPI monitor transitions and the older home monitor. UI compatibility scaling is approved; fractional caller coordinates can round physical spacing to a representable value.
 - Phases 6/7 exercise the retained native property-sheet controls, owned MDI/class filtering, and the real tray controller through a substituted Shell boundary. Still validate actual Explorer delivery, host menu dispatch, context help and keyboard navigation. Disabled aspect-ratio/auto-lineup features remain disabled; app audio has been removed.
 - Preserve explicit impossible-fit limits: oversized movement uses an accessible-origin fallback; ordinary resizing does not translate an outside fixed edge; centered resizing cannot always fit if its original center is outside the desktop.
-- The user committed Phase 8 and authorized the Phase 9 folder organization. Naming and refactoring remain separate backlog phases. The user owns commits.
+- The user committed Phase 9 and authorized the Phase 10 naming cleanup. Refactoring remains a separate backlog phase. The user owns commits.
 
 ## Phase 8 execution: repository README
 
@@ -196,3 +198,13 @@ Verification:
 - Independent review found two relocation issues, both corrected: archive folder names initially matched ignore rules, and the still-included `WDJSUB.H` belongs with active engine headers even though its old C implementation is inactive. No further required corrections remained.
 
 No tests were executed for this increment; the last results remain Phase 7's 286/286 in Debug/Release on each architecture. No application/global hooks were launched, user INI changed, or Git staging/commits performed. Manual desktop validation, naming, and Clean Code work remain separate.
+
+## Phase 10 execution: solution/project naming cleanup
+
+The user committed Phase 9 before authorizing this naming increment. Renamed `ALLSNAPB.sln` to `allsnap.sln`, and `snapit.vcxproj` / `snapit.vcxproj.filters` to `allsnap.vcxproj` / `allsnap.vcxproj.filters`. These names match the existing application ProjectName and executable naming. The original meaning of the trailing B is unknown; no interpretation was assumed. Historical project/source/installer names are retained.
+
+Updated the solution's app-project path, app RootNamespace metadata (`snapit` to `allsnap`), current build/test instructions, spec references, and backlog. Seven Solution Items still used pre-folder-move HTML paths; they now resolve under `help/`. Project GUIDs, configurations, targets/outputs, debugger working directory, INI behavior, binary names, and runtime identifiers are unchanged. The app project's only content change is RootNamespace; filters are unchanged. No production/resource/test code changed.
+
+Verification: all eight `allsnap.sln` builds passed (Debug, Release, Debug UNICODE, Release UNICODE for Win32/x64), including test-project compilation without executing tests. Logs are under ignored `build/naming-verification/`. Solution project/item paths and local Markdown links resolve, exact project/filter comparisons confirm the metadata-only scope, and `git diff --check` passed. Independent review found no further required corrections. Historical build records above retain the solution filename used at the time.
+
+No tests were executed; the last test results remain Phase 7's 286/286 in Debug/Release on each architecture. No app/global hooks were launched, user settings changed, or Git staging/commits performed. Open `allsnap.sln` in Visual Studio; old recent-solution entries may need replacing. Manual desktop checks and Clean Code refactoring remain separate milestones.

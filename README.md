@@ -13,14 +13,18 @@ MSVC v143 x86/x64 tools, and a Windows 10/11 SDK. The verified development
 environment is 64-bit Windows 11, VS 2022 17.14, MSVC 14.44, and SDK 10.0.26100.0.
 Projects select the latest installed Windows SDK in the `10.0` family.
 
-Open [ALLSNAPB.sln](ALLSNAPB.sln), set **allsnap** as the startup project, and
+Open [allsnap.sln](allsnap.sln), set **allsnap** as the startup project, and
 choose **Win32** or **x64**. Alternatively, run these commands from the repository
 root in Developer PowerShell for Visual Studio 2022:
 
 ```powershell
-msbuild .\ALLSNAPB.sln /p:Configuration=Release /p:Platform=Win32
-msbuild .\ALLSNAPB.sln /p:Configuration=Release /p:Platform=x64
+msbuild .\allsnap.sln /p:Configuration=Release /p:Platform=Win32
+msbuild .\allsnap.sln /p:Configuration=Release /p:Platform=x64
 ```
+
+The solution was previously named `ALLSNAPB.sln`; the application project was
+`snapit.vcxproj`. Open the renamed solution after updating an existing checkout.
+The app project is now `allsnap.vcxproj`; executable and DLL names are unchanged.
 
 The configurations are `Debug`, `Release`, `Debug UNICODE`, and `Release UNICODE`.
 All four now build Unicode; the older configuration names are retained.

@@ -45,7 +45,7 @@ These describe the original inspection, rather than the repaired source. The fir
 Use the **Microsoft Native C++ Unit Test Framework** already installed with this machine's Visual Studio C++ workload. Both x86/x64 libraries, headers, and `vstest.console.exe` were found. This approved choice avoids adding a package manager or test dependency.
 
 - Keep production `.c` sources compiled as C. Use C++ test files with C linkage declarations to call the same production code.
-- Add one native test project to `ALLSNAPB.sln`, with unit and acceptance suites grouped separately and the same assertions, runner, and reporting.
+- Add one native test project to `allsnap.sln`, with unit and acceptance suites grouped separately and the same assertions, runner, and reporting.
 - Unit tests exercise rectangle math, thresholds, settings validation, candidate collection, and lifecycle state transitions.
 - Acceptance tests exercise documented user behavior through the actual production move/resize, configuration, and lifecycle paths, combining components rather than replacing the snapping algorithm with a test implementation.
 - Introduce only the small seams needed to supply monitor layouts, rectangles, cursor/key state, temporary INI paths, and Win32 failures. Do not build a general mocking framework or require a wholesale engine extraction.
@@ -68,7 +68,7 @@ Each documented acceptance scenario should have a stable identifier recorded in 
 
 - **Completed in Phase 7: remove all app sound functionality.** Sound preferences/previews, playback/worker/messages, noisy API/settings, exclusive resources/assets, installer references and WinMM linkage are removed. Shared dialog/help/thread utilities with other uses remain. Obsolete INI keys are ignored without discarding other preferences. Native UI/tracking/controlled lifecycle/INI regression tests and actual binary inspection verify the increment; main app global-hook startup remains a separate manual check. Historical compiled help is retained explicitly as an archive; source help is updated. See the implementation plan for executed results and limits.
 - Consider one launcher/tray UI coordinating x86/x64 helpers after lifecycle ownership is reliable. Both helper architectures remain necessary for the current injected-hook approach.
-- Requested follow-up work: create a root `README.md`, organize source/resource folders, review the unexplained `ALLSNAPB` solution name, and perform an Uncle Bob Clean Code refactoring pass behind the regression suite. These are backlog items, not a reason to mix a large structural change into the current behavior repairs.
+- Requested follow-up work: create a root `README.md`, organize source/resource folders, clean up solution/project naming, and perform an Uncle Bob Clean Code refactoring pass behind the regression suite. Track completion in the implementation plan/backlog; keep these milestones separate from behavior repairs.
 - Installer modernization, UI redesign, alternate snapping engines, broad legacy-code cleanup, and automatic restart/watchdog behavior are outside the initial repair pass.
 
 ## Completion standard
