@@ -28,5 +28,17 @@ per architecture at a time because production engine globals are shared within
 that test DLL. Native dialog and visible-frame cases require an active Windows
 desktop and use hidden or nonactivating, offscreen test-owned windows. The
 confinement oracle uses GDI region union/difference independently of the production
-placement solver. Deterministic component coverage does not replace interactive
-mixed-process lifetime, mixed-DPI transitions, or long-running desktop validation.
+placement solver. Automated coverage does not replace actual global-hook delivery,
+mixed-DPI transitions, or long-running desktop validation.
+
+Process-lifetime acceptance tests build `tests/process/allsnap_process_engine.vcxproj`
+and `allsnap_process_helper.vcxproj` through test-project references. Each scenario
+copies the dedicated engine DLL into a private directory under the ignored test
+output and loads that same copy into separate owned helper processes. The DLL
+reuses production C sources and the actual production DllMain; global hook
+installation/removal is substituted, while native subclassing and loader behavior
+remain real. Tests terminate only their own helpers and use owned cleanup jobs.
+No currently running allSnap instance or production DLL is used by this harness.
+The production retention policy pins the engine until its process exits. Component
+tests substitute pinning so their test assembly remains unloadable; the dedicated
+process engine uses the real Windows pin operation and exits with its owned helper.

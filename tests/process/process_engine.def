@@ -1,0 +1,3 @@
+LIBRARY allsnap_process_engine
+EXPORTS
+    SnapProcessDispatch

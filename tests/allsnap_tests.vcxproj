@@ -96,5 +96,15 @@
     <ClCompile Include="..\snap_ini.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
     <ClCompile Include="..\snap_settings.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="process\allsnap_process_engine.vcxproj">
+      <Project>{77D9FAF1-A6D2-41BE-9274-F5ED48979E91}</Project>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <ProjectReference Include="process\allsnap_process_helper.vcxproj">
+      <Project>{A360B638-F4B4-4D45-A8B5-E548048A52E7}</Project>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

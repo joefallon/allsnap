@@ -35,6 +35,21 @@
 #define IS_SIZING_SPOT(x) ( ((x) >= HTSIZEFIRST) && ((x) <= HTSIZELAST) \
 							|| ((x) == HTSIZE))
 
+#define OWNER_SLOT_COUNT 64
+#define OWNER_GENERATION_MASK 0x3fffffffULL
+#define OWNER_READY (1ULL << 62)
+#define OWNER_RELEASING (2ULL << 62)
+#define OWNER_PHASE_MASK (3ULL << 62)
+typedef struct OWNER_IDENTITY {
+    DWORD process_id;
+    ULONGLONG process_birth;
+    ULONGLONG thread_birth;
+} OWNER_IDENTITY;
+typedef struct OWNER_SLOT {
+    __declspec(align(8)) volatile LONGLONG claim;
+    OWNER_IDENTITY identity;
+} OWNER_SLOT;
+
 //Instruct compiler to put the g_thresh and g_enabled data 
 // in its own data Section called Shared. We then instruct the
 //linker that we want to share the data in this section
@@ -66,7 +81,7 @@ BOOL	g_kept_to_screen		= FALSE;
 BOOL	g_cropping_rgn			= TRUE;
 OSVERSIONINFO		g_os;
 
-volatile LONG g_active_subclasses = 0;
+OWNER_SLOT g_registration_owners[OWNER_SLOT_COUNT] = {0};
 volatile LONG g_hook_stopping = FALSE;
 int g_window_spacing = 0;
 
@@ -77,8 +92,13 @@ TCHAR	g_ignored_classes[MAX_CLASSNAME_LENGTH * MAX_NUM_CLASS_NAMES] =
 #pragma data_seg()
 
 HHOOK g_hhook = NULL;
-volatile LONG g_local_registration = 0;
+__declspec(align(8)) volatile LONGLONG g_local_claim = 0;
+int g_local_owner_slot = -1;
+LONGLONG g_local_owner_token = 0;
+OWNER_IDENTITY g_local_identity = {0};
+volatile LONG g_module_pinned = FALSE;
 DWORD g_subclass_thread = 0;
+BOOL g_subclass_installed = FALSE;
 SUBCLASSPROC	g_subclass_proc = NULL;
 HWND	g_subclassed_window = NULL;
 WNDPROC g_original_proc = NULL; 
@@ -177,6 +197,9 @@ BOOL is_matching_platform(HWND hwnd){
 #define SNAP_SUBCLASS_PROC SubclassProc32
 #endif
 
+static BOOL WINAPI PinLifecycleModule(void);
+static int WINAPI ProbeOwnerNative(DWORD, DWORD, ULONGLONG, ULONGLONG, BOOL);
+
 #ifdef ALLSNAP_TESTING
 /* A test must explicitly supply a hook operation; never hook the user's desktop. */
 static HHOOK WINAPI TestHookNotSupported(int type, HOOKPROC proc, HINSTANCE instance, DWORD thread)
@@ -191,21 +214,34 @@ static BOOL WINAPI TestUnhookNotSupported(HHOOK hook)
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
+static BOOL WINAPI TestPinSucceeded(void) { return TRUE; }
+#ifdef ALLSNAP_PROCESS_TESTING
+#define DefaultPinModule PinLifecycleModule
+#else
+#define DefaultPinModule TestPinSucceeded
+#endif
+static LONG g_test_external_count = 0;
 static const SNAP_LIFECYCLE_TEST_OPS g_default_lifecycle_ops = {
-    TestHookNotSupported, TestUnhookNotSupported, SetWindowSubclass, RemoveWindowSubclass
+    TestHookNotSupported, TestUnhookNotSupported, SetWindowSubclass, RemoveWindowSubclass,
+    DefaultPinModule, ProbeOwnerNative
 };
 static SNAP_LIFECYCLE_TEST_OPS g_lifecycle_ops = {
-    TestHookNotSupported, TestUnhookNotSupported, SetWindowSubclass, RemoveWindowSubclass
+    TestHookNotSupported, TestUnhookNotSupported, SetWindowSubclass, RemoveWindowSubclass,
+    DefaultPinModule, ProbeOwnerNative
 };
 #define LifecycleInstallHook g_lifecycle_ops.install_hook
 #define LifecycleRemoveHook g_lifecycle_ops.remove_hook
 #define LifecycleInstallSubclass g_lifecycle_ops.install_subclass
 #define LifecycleRemoveSubclass g_lifecycle_ops.remove_subclass
+#define LifecyclePinModule g_lifecycle_ops.pin_module
+#define LifecycleProbeOwner g_lifecycle_ops.probe_owner
 #else
 #define LifecycleInstallHook SetWindowsHookEx
 #define LifecycleRemoveHook UnhookWindowsHookEx
 #define LifecycleInstallSubclass SetWindowSubclass
 #define LifecycleRemoveSubclass RemoveWindowSubclass
+#define LifecyclePinModule PinLifecycleModule
+#define LifecycleProbeOwner ProbeOwnerNative
 #endif
 
 static DWORD LifecycleError(void)
@@ -221,29 +257,205 @@ static void ReportLifecycleFailure(enum SNAP_DIAGNOSTIC_STAGE stage, DWORD error
     SetLastError(error);
 }
 
-/* Safe under loader lock: no User32/Comctl calls and no waits for other threads. */
-static void ReleaseLocalSubclass(void)
+static LONGLONG ReadClaim(volatile LONGLONG * claim)
 {
-    /* Keep the local slot unavailable until all old ownership fields are cleared. */
-    if (InterlockedCompareExchange(&g_local_registration, -1, 1) != 1)
-        return;
+    return InterlockedCompareExchange64(claim,0,0);
+}
+static DWORD ClaimThread(LONGLONG claim) { return (DWORD)(ULONGLONG)claim; }
+static LONGLONG FreeClaim(LONGLONG claim)
+{
+    return (LONGLONG)((ULONGLONG)claim & (OWNER_GENERATION_MASK << 32));
+}
+static LONGLONG NextClaim(LONGLONG previous, DWORD thread_id)
+{
+    ULONGLONG generation = ((ULONGLONG)previous >> 32) & OWNER_GENERATION_MASK;
+    if (generation == OWNER_GENERATION_MASK) return 0; /* Never permit generation ABA. */
+    return (LONGLONG)(((generation + 1) << 32) | thread_id);
+}
+static BOOL IsPublished(LONGLONG claim)
+{
+    return ((ULONGLONG)claim & OWNER_PHASE_MASK) == OWNER_READY;
+}
+static ULONGLONG BirthValue(FILETIME time)
+{
+    return ((ULONGLONG)time.dwHighDateTime << 32) | time.dwLowDateTime;
+}
+static BOOL CurrentIdentity(OWNER_IDENTITY * identity)
+{
+    FILETIME process_birth,thread_birth,exit_time,kernel,user;
+    if (!GetProcessTimes(GetCurrentProcess(),&process_birth,&exit_time,&kernel,&user)
+        || !GetThreadTimes(GetCurrentThread(),&thread_birth,&exit_time,&kernel,&user)) return FALSE;
+    identity->process_id = GetCurrentProcessId();
+    identity->process_birth = BirthValue(process_birth);
+    identity->thread_birth = BirthValue(thread_birth);
+    return TRUE;
+}
+
+static BOOL WINAPI PinLifecycleModule(void)
+{
+    HMODULE module;
+    return GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+        (LPCTSTR)(ULONG_PTR)&CallWndProc,&module);
+}
+static BOOL EnsureLifecyclePinned(void)
+{
+    if (InterlockedCompareExchange(&g_module_pinned,0,0)) return TRUE;
+    if (!LifecyclePinModule()) return FALSE;
+    InterlockedExchange(&g_module_pinned,TRUE);
+    return TRUE;
+}
+
+/* Unknown access is not proof of death. Full birth times distinguish reused IDs. */
+static int WINAPI ProbeOwnerNative(DWORD process_id,DWORD thread_id,ULONGLONG process_birth,
+    ULONGLONG thread_birth,BOOL published)
+{
+    HANDLE process = NULL,thread;
+    FILETIME birth,exit_time,kernel,user;
+    DWORD wait;
+    if (published) {
+        process = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION,FALSE,process_id);
+        if (!process) {
+            return GetLastError() == ERROR_INVALID_PARAMETER ? SNAP_OWNER_DEAD : SNAP_OWNER_UNKNOWN;
+        }
+        wait = WaitForSingleObject(process,0);
+        if (wait == WAIT_OBJECT_0) { CloseHandle(process); return SNAP_OWNER_DEAD; }
+        if (wait != WAIT_TIMEOUT || !GetProcessTimes(process,&birth,&exit_time,&kernel,&user)) {
+            CloseHandle(process); return SNAP_OWNER_UNKNOWN;
+        }
+        if (BirthValue(birth) != process_birth) { CloseHandle(process); return SNAP_OWNER_DEAD; }
+        CloseHandle(process);
+    }
+    thread = OpenThread(SYNCHRONIZE | (published ? THREAD_QUERY_LIMITED_INFORMATION : 0),FALSE,thread_id);
+    if (!thread) return GetLastError() == ERROR_INVALID_PARAMETER ? SNAP_OWNER_DEAD : SNAP_OWNER_UNKNOWN;
+    wait = WaitForSingleObject(thread,0);
+    if (wait == WAIT_OBJECT_0) { CloseHandle(thread); return SNAP_OWNER_DEAD; }
+    if (wait != WAIT_TIMEOUT) { CloseHandle(thread); return SNAP_OWNER_UNKNOWN; }
+    if (published) {
+        typedef DWORD (WINAPI *GET_THREAD_PROCESS)(HANDLE);
+        GET_THREAD_PROCESS get_process = (GET_THREAD_PROCESS)GetProcAddress(
+            GetModuleHandle(_T("kernel32.dll")),"GetProcessIdOfThread");
+        DWORD actual_process;
+        if (!get_process || !(actual_process = get_process(thread))
+            || !GetThreadTimes(thread,&birth,&exit_time,&kernel,&user)) {
+            CloseHandle(thread); return SNAP_OWNER_UNKNOWN;
+        }
+        if (actual_process != process_id || BirthValue(birth) != thread_birth) {
+            CloseHandle(thread); return SNAP_OWNER_DEAD;
+        }
+    }
+    CloseHandle(thread);
+    return SNAP_OWNER_ALIVE;
+}
+
+static int ProbeClaim(LONGLONG claim,const OWNER_IDENTITY * identity)
+{
+    BOOL published = IsPublished(claim);
+    return LifecycleProbeOwner(published ? identity->process_id : 0,ClaimThread(claim),
+        published ? identity->process_birth : 0,published ? identity->thread_birth : 0,published);
+}
+static void ReleaseOwnerSlot(int slot,LONGLONG token)
+{
+    if (slot >= 0 && slot < OWNER_SLOT_COUNT)
+        InterlockedCompareExchange64(&g_registration_owners[slot].claim,FreeClaim(token),token);
+}
+static LONG RegisteredOwners(void)
+{
+    LONG count = 0;
+    int index;
+    for (index = 0; index < OWNER_SLOT_COUNT; ++index) {
+        OWNER_SLOT * slot = &g_registration_owners[index];
+        LONGLONG claim = ReadClaim(&slot->claim);
+        OWNER_IDENTITY identity = {0};
+        if (!ClaimThread(claim)) continue;
+        if (IsPublished(claim)) identity = slot->identity;
+        MemoryBarrier();
+        if (ReadClaim(&slot->claim) != claim) { ++count; continue; }
+        if (ProbeClaim(claim,&identity) == SNAP_OWNER_DEAD) {
+            if (InterlockedCompareExchange64(&slot->claim,FreeClaim(claim),claim) == claim) continue;
+        }
+        ++count;
+    }
+#ifdef ALLSNAP_TESTING
+    count += g_test_external_count;
+#endif
+    return count;
+}
+static BOOL ReserveOwnerSlot(const OWNER_IDENTITY * identity,int * owner_slot,LONGLONG * owner_token)
+{
+    int index;
+    RegisteredOwners();
+    for (index = 0; index < OWNER_SLOT_COUNT; ++index) {
+        OWNER_SLOT * slot = &g_registration_owners[index];
+        LONGLONG previous = ReadClaim(&slot->claim),claim;
+        if (ClaimThread(previous)) continue;
+        claim = NextClaim(previous,GetCurrentThreadId());
+        if (!claim || InterlockedCompareExchange64(&slot->claim,claim,previous) != previous) continue;
+        slot->identity = *identity;
+        MemoryBarrier();
+        *owner_token = (LONGLONG)((ULONGLONG)claim | OWNER_READY);
+        if (InterlockedCompareExchange64(&slot->claim,*owner_token,claim) != claim) {
+            SetLastError(ERROR_BUSY); return FALSE;
+        }
+        *owner_slot = index;
+        return TRUE;
+    }
+    SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+    return FALSE;
+}
+static void ClearLocalFields(void)
+{
+    g_local_owner_slot = -1;
+    g_local_owner_token = 0;
+    ZeroMemory(&g_local_identity,sizeof(g_local_identity));
     g_original_proc = NULL;
     g_subclassed_window = NULL;
     g_subclass_proc = NULL;
     g_subclass_thread = 0;
+    g_subclass_installed = FALSE;
     g_moved_or_sized = FALSE;
     g_num_msgs_so_far = 0;
-    InterlockedDecrement(&g_active_subclasses);
-    InterlockedExchange(&g_local_registration, 0);
 }
-
+/* Loader-lock safe: exact-token release and local writes only. Never probe or wait here. */
+static void ReleaseLocalSubclass(void)
+{
+    LONGLONG claim = ReadClaim(&g_local_claim),releasing;
+    if (!ClaimThread(claim) || ((ULONGLONG)claim & OWNER_PHASE_MASK) == OWNER_RELEASING) return;
+    releasing = (LONGLONG)(((ULONGLONG)claim & ~OWNER_PHASE_MASK) | OWNER_RELEASING);
+    if (InterlockedCompareExchange64(&g_local_claim,releasing,claim) != claim) return;
+    /* Before publication the shared-slot reference may be incomplete; a dead owner is reaped later. */
+    if (IsPublished(claim)) ReleaseOwnerSlot(g_local_owner_slot,g_local_owner_token);
+    ClearLocalFields();
+    InterlockedExchange64(&g_local_claim,FreeClaim(claim));
+}
+static BOOL ReconcileLocalOwner(void)
+{
+    LONGLONG claim = ReadClaim(&g_local_claim),replacement;
+    OWNER_IDENTITY identity = {0};
+    BOOL lost_slot = FALSE;
+    if (!ClaimThread(claim)) return TRUE;
+    if (IsPublished(claim)) {
+        identity = g_local_identity;
+        lost_slot = g_local_owner_slot < 0 || g_local_owner_slot >= OWNER_SLOT_COUNT
+            || ReadClaim(&g_registration_owners[g_local_owner_slot].claim) != g_local_owner_token;
+    }
+    MemoryBarrier();
+    if (ReadClaim(&g_local_claim) != claim) return FALSE;
+    if (!lost_slot && ProbeClaim(claim,&identity) != SNAP_OWNER_DEAD) return FALSE;
+    /* The recovery claimant publishes its own TID before touching abandoned local fields. */
+    replacement = NextClaim(FreeClaim(claim),GetCurrentThreadId());
+    if (!replacement || InterlockedCompareExchange64(&g_local_claim,replacement,claim) != claim) return FALSE;
+    if (IsPublished(claim)) ReleaseOwnerSlot(g_local_owner_slot,g_local_owner_token);
+    ClearLocalFields();
+    InterlockedExchange64(&g_local_claim,FreeClaim(replacement));
+    return TRUE;
+}
 static void SubclassWindowDestroyed(HWND hwnd)
 {
     if (hwnd == g_subclassed_window && GetCurrentThreadId() == g_subclass_thread)
         ReleaseLocalSubclass();
 }
 
-#ifndef ALLSNAP_TESTING
+#if !defined(ALLSNAP_TESTING) || defined(ALLSNAP_PROCESS_TESTING)
 BOOL WINAPI DllMain(HINSTANCE hinstDll, DWORD fdwReason, PVOID reserved)
 {
     (void)reserved;
@@ -258,6 +470,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDll, DWORD fdwReason, PVOID reserved)
 BOOL WINAPI SnapHookAll(HWND hwnd, UINT thread_id, OSVERSIONINFO os)
 {
     HHOOK hook;
+    if (!EnsureLifecyclePinned()) return FALSE;
     if (g_hhook != NULL)
         return TRUE;
     SetLastError(ERROR_SUCCESS);
@@ -281,7 +494,7 @@ BOOL WINAPI SnapUnHookAll(void)
     if (g_hhook == NULL)
         return TRUE;
     InterlockedExchange(&g_hook_stopping, TRUE);
-    if (InterlockedCompareExchange(&g_active_subclasses, 0, 0) != 0) {
+    if (RegisteredOwners() != 0) {
         InterlockedExchange(&g_hook_stopping, FALSE);
         SetLastError(ERROR_BUSY);
         return FALSE;
@@ -299,13 +512,13 @@ BOOL WINAPI SnapUnHookAll(void)
 
 BOOL WINAPI SnapCanUnHook(void)
 {
-    return InterlockedCompareExchange(&g_active_subclasses, 0, 0) == 0;
+    return RegisteredOwners() == 0;
 }
 
 static BOOL TryUnSubclass(HWND hwnd)
 {
     DWORD error;
-    if (InterlockedCompareExchange(&g_local_registration, 0, 0) == 0)
+    if (!ClaimThread(ReadClaim(&g_local_claim)))
         return TRUE;
     if (hwnd != g_subclassed_window) {
         SetLastError(ERROR_INVALID_WINDOW_HANDLE);
@@ -313,6 +526,10 @@ static BOOL TryUnSubclass(HWND hwnd)
     }
     if (GetCurrentThreadId() != g_subclass_thread) {
         SetLastError(ERROR_INVALID_THREAD_ID);
+        return FALSE;
+    }
+    if (!g_subclass_installed) {
+        SetLastError(ERROR_BUSY);
         return FALSE;
     }
     if (!IsWindow(hwnd)) {
@@ -338,37 +555,58 @@ static BOOL TrySubclass(HWND hwnd)
 {
     RECT winrect;
     DWORD error;
-    if (hwnd == NULL || !GetWindowRect(hwnd, &winrect)) {
+    OWNER_IDENTITY identity;
+    LONGLONG previous,claim,published;
+    if (!EnsureLifecyclePinned()) {
+        error = LifecycleError();
+        ReportLifecycleFailure(SNAP_DIAG_SUBCLASS_INSTALL,error);
+        return FALSE;
+    }
+    if (hwnd == NULL || !GetWindowRect(hwnd,&winrect)) {
         SetLastError(ERROR_INVALID_WINDOW_HANDLE);
         return FALSE;
     }
-    if (InterlockedCompareExchange(&g_hook_stopping, 0, 0)) {
-        SetLastError(ERROR_BUSY);
-        return FALSE;
+    if (InterlockedCompareExchange(&g_hook_stopping,0,0)) {
+        SetLastError(ERROR_BUSY); return FALSE;
     }
-    if (InterlockedCompareExchange(&g_local_registration, 1, 0) != 0) {
-        if (hwnd == g_subclassed_window && GetCurrentThreadId() == g_subclass_thread)
+    if (!ReconcileLocalOwner()) {
+        if (g_subclass_installed && hwnd == g_subclassed_window && GetCurrentThreadId() == g_subclass_thread)
             return TRUE;
-        SetLastError(ERROR_BUSY);
-        return FALSE;
+        SetLastError(ERROR_BUSY); return FALSE;
     }
-    /* Reserve before installing, so shutdown cannot pass an in-flight registration. */
-    InterlockedIncrement(&g_active_subclasses);
-    if (InterlockedCompareExchange(&g_hook_stopping, 0, 0)) {
+    if (!CurrentIdentity(&identity)) return FALSE;
+    previous = ReadClaim(&g_local_claim);
+    claim = NextClaim(previous,GetCurrentThreadId());
+    if (!claim || ClaimThread(previous)
+        || InterlockedCompareExchange64(&g_local_claim,claim,previous) != previous) {
+        SetLastError(ERROR_BUSY); return FALSE;
+    }
+    if (!ReserveOwnerSlot(&identity,&g_local_owner_slot,&g_local_owner_token)) {
+        error = GetLastError();
         ReleaseLocalSubclass();
-        SetLastError(ERROR_BUSY);
-        return FALSE;
+        SetLastError(error); return FALSE;
     }
-    SetLastError(ERROR_SUCCESS);
-    if (!LifecycleInstallSubclass(hwnd, (SUBCLASSPROC)SNAP_SUBCLASS_PROC, ALLSNAP_SUBCLASS_ID, 0)) {
-        error = LifecycleError();
-        ReleaseLocalSubclass();
-        ReportLifecycleFailure(SNAP_DIAG_SUBCLASS_INSTALL, error);
-        return FALSE;
-    }
+    g_local_identity = identity;
     g_subclassed_window = hwnd;
     g_subclass_thread = GetCurrentThreadId();
     g_subclass_proc = (SUBCLASSPROC)SNAP_SUBCLASS_PROC;
+    published = (LONGLONG)((ULONGLONG)claim | OWNER_READY);
+    if (InterlockedCompareExchange64(&g_local_claim,published,claim) != claim) {
+        ReleaseOwnerSlot(g_local_owner_slot,g_local_owner_token);
+        SetLastError(ERROR_BUSY); return FALSE;
+    }
+    /* Publication reserves admission before any native registration side effect. */
+    if (InterlockedCompareExchange(&g_hook_stopping,0,0)) {
+        ReleaseLocalSubclass(); SetLastError(ERROR_BUSY); return FALSE;
+    }
+    SetLastError(ERROR_SUCCESS);
+    if (!LifecycleInstallSubclass(hwnd,(SUBCLASSPROC)SNAP_SUBCLASS_PROC,ALLSNAP_SUBCLASS_ID,0)) {
+        error = LifecycleError();
+        ReleaseLocalSubclass();
+        ReportLifecycleFailure(SNAP_DIAG_SUBCLASS_INSTALL,error);
+        return FALSE;
+    }
+    g_subclass_installed = TRUE;
     g_last_height = rectHeight(winrect);
     g_last_width = rectWidth(winrect);
     g_num_msgs_so_far = 0;
@@ -376,7 +614,6 @@ static BOOL TrySubclass(HWND hwnd)
     snapper_OnEnterSizeMove(hwnd);
     return TRUE;
 }
-
 void Subclass(HWND hwnd)
 {
     TrySubclass(hwnd);
@@ -384,6 +621,7 @@ void Subclass(HWND hwnd)
 
 LRESULT WINAPI CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
+    if (!EnsureLifecyclePinned()) return CallNextHookEx(NULL,nCode,wParam,lParam);
     /* A negative hook code must be forwarded without inspecting its payload. */
     if (nCode == HC_ACTION && lParam != 0) {
         PCWPSTRUCT message = (PCWPSTRUCT)lParam;
@@ -403,8 +641,11 @@ LRESULT WINAPI CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam)
 void SnapTest_LifecycleReset(void)
 {
     ReleaseLocalSubclass();
-    InterlockedExchange(&g_active_subclasses, 0);
+    g_test_external_count = 0;
+#ifndef ALLSNAP_PROCESS_TESTING
     InterlockedExchange(&g_hook_stopping, FALSE);
+    InterlockedExchange(&g_module_pinned, FALSE);
+#endif
     g_hhook = NULL;
     g_hWnd_app = NULL;
     g_lifecycle_ops = g_default_lifecycle_ops;
@@ -417,6 +658,8 @@ void SnapTest_SetLifecycleOps(const SNAP_LIFECYCLE_TEST_OPS * operations)
     if (operations->remove_hook) g_lifecycle_ops.remove_hook = operations->remove_hook;
     if (operations->install_subclass) g_lifecycle_ops.install_subclass = operations->install_subclass;
     if (operations->remove_subclass) g_lifecycle_ops.remove_subclass = operations->remove_subclass;
+    if (operations->pin_module) g_lifecycle_ops.pin_module = operations->pin_module;
+    if (operations->probe_owner) g_lifecycle_ops.probe_owner = operations->probe_owner;
 }
 BOOL SnapTest_Subclass(HWND hwnd) { return TrySubclass(hwnd); }
 BOOL SnapTest_UnSubclass(HWND hwnd) { return TryUnSubclass(hwnd); }
@@ -424,12 +667,17 @@ void SnapTest_ProcessDetach(void) { ReleaseLocalSubclass(); }
 void SnapTest_WindowDestroyed(HWND hwnd) { SubclassWindowDestroyed(hwnd); }
 void SnapTest_SetExternalSubclassCount(LONG count)
 {
-    InterlockedExchange(&g_active_subclasses, count + (g_local_registration ? 1 : 0));
+    g_test_external_count = count > 0 ? count : 0;
 }
-LONG SnapTest_ActiveSubclassCount(void) { return InterlockedCompareExchange(&g_active_subclasses, 0, 0); }
+LONG SnapTest_ActiveSubclassCount(void) { return RegisteredOwners(); }
 HWND SnapTest_SubclassWindow(void) { return g_subclassed_window; }
 HHOOK SnapTest_HookHandle(void) { return g_hhook; }
 LRESULT SnapTest_CallHook(int code, WPARAM wparam, LPARAM lparam) { return CallWndProc(code, wparam, lparam); }
+void SnapTest_CorruptLocalOwnerBirth(void)
+{
+    if (g_local_owner_slot >= 0 && g_local_owner_slot < OWNER_SLOT_COUNT)
+        g_registration_owners[g_local_owner_slot].identity.process_birth = 0;
+}
 #endif
 BOOL window_size_changed(HWND hwnd){
 	RECT win_rect;

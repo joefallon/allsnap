@@ -1,6 +1,8 @@
 #ifndef SNAP_LIFECYCLE_TEST_H
 #define SNAP_LIFECYCLE_TEST_H
 
+enum SNAP_OWNER_PROBE { SNAP_OWNER_UNKNOWN, SNAP_OWNER_ALIVE, SNAP_OWNER_DEAD };
+
 #ifdef ALLSNAP_TESTING
 #include <windows.h>
 #include <commctrl.h>
@@ -14,7 +16,10 @@ typedef struct SNAP_LIFECYCLE_TEST_OPS {
     BOOL (WINAPI *remove_hook)(HHOOK);
     BOOL (WINAPI *install_subclass)(HWND, SUBCLASSPROC, UINT_PTR, DWORD_PTR);
     BOOL (WINAPI *remove_subclass)(HWND, SUBCLASSPROC, UINT_PTR);
+    BOOL (WINAPI *pin_module)(void);
+    int (WINAPI *probe_owner)(DWORD, DWORD, ULONGLONG, ULONGLONG, BOOL);
 } SNAP_LIFECYCLE_TEST_OPS;
+
 
 void SnapTest_LifecycleReset(void);
 void SnapTest_SetLifecycleOps(const SNAP_LIFECYCLE_TEST_OPS * operations);
@@ -27,6 +32,7 @@ LONG SnapTest_ActiveSubclassCount(void);
 HWND SnapTest_SubclassWindow(void);
 HHOOK SnapTest_HookHandle(void);
 LRESULT SnapTest_CallHook(int code, WPARAM wparam, LPARAM lparam);
+void SnapTest_CorruptLocalOwnerBirth(void);
 
 #ifdef __cplusplus
 }

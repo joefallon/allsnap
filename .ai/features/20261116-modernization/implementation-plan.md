@@ -1,6 +1,6 @@
 # allSnap modernization implementation plan
 
-Status: initial repair checkpoint implemented and independently reviewed; full Debug/Release test matrix and all eight solution builds passed. Desktop/hardware and remaining lifecycle work are listed below. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
+Status: initial repair checkpoint committed by the user; Phase 5 isolated process-lifetime repairs implemented and independently reviewed. All 222 tests pass in Debug/Release on Win32/x64, and all eight solution builds pass. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
 
 ## Current position
 
@@ -8,17 +8,18 @@ Status: initial repair checkpoint implemented and independently reviewed; full D
 - Completed: verified local availability of Microsoft's native C++ testing headers, x86/x64 libraries, and VSTest runner. Approved as the common unit/acceptance framework; no dependencies installed.
 - Confirmed with user: root `features/*.feature` files are documentation only; no Gherkin tooling.
 - Confirmed with user: all sound functionality is to be removed in a future backlog increment.
-- Native unit/acceptance tests now cover 206 methods (78 unit, 128 acceptance). All passed in Debug and Release on Win32 and x64; both Release suite filters passed independently on each architecture.
+- Native unit/acceptance tests now cover 222 methods (82 unit, 140 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
 - User handles all commits. Agents do not stage, commit, reset, or amend. Phase boundaries below are review checkpoints, not claims of commits already created.
 
 ## Milestones and human commit checkpoints
 
 | Phase | Reviewable scope | Current verification |
 | --- | --- | --- |
-| 1. Test foundation | Microsoft framework, runner, documentation, production-C fixture seams, initial confinement/snapping contracts | Implemented. Current suite: 206/206 in all four architecture/configuration runs; separate filters verify 78 Unit and 128 Acceptance methods. Later contract review corrected an inherited threshold assumption. |
-| 2. Lifecycle reliability | Hook/subclass ownership and failures, safe shutdown bookkeeping, diagnostics | Failed-subclass regression reproduced red; 23/23 focused Win32 lifecycle tests passed. Shared-count forced-termination and real cross-process lifetime remain limitations. |
+| 1. Test foundation | Microsoft framework, runner, documentation, production-C fixture seams, initial confinement/snapping contracts | Implemented. Current suite: 222/222 in all four architecture/configuration runs. Later contract review corrected an inherited threshold assumption. |
+| 2. Lifecycle reliability | Hook/subclass ownership and failures, safe shutdown bookkeeping, diagnostics | Initial failure-handling checkpoint passed 23 focused tests. Phase 5 supersedes scalar accounting and simulated ownership with a process-aware registry and actual child-process coverage. |
 | 3. Monitor/grid and Settings repairs | Workarea/guide separation, validation, Old position, Settings persistence and failure reporting, held-key semantics | Implemented. Geometry, Old position, input, validation reentrancy, Apply acknowledgement/retry, and opening-state regressions demonstrated red before repair; final suite green on both architectures. Remaining Settings paths require desktop validation. |
 | 4. Visible frames, spacing, and desktop geometry | DWM/region/manual crop composition, collapsed spacing UI/INI, ordinary/HiDPI coordinates, monitor union confinement | Implemented. Independent GDI coverage oracle plus native framed ordinary/Ctrl resize cases are green in the final matrix. Real mixed-DPI transitions and home-monitor checks remain pending. |
+| 5. Isolated process lifetime | Actual child-process termination/detach, concurrent owners, shutdown reservations, callback/module retention | Implemented and independently reviewed. Three product failures demonstrated before repair; 12 isolated-process methods and four new unit tests pass within the 222-test matrix. Global-hook/desktop validation remains separate. |
 | Later backlog phases | Audio removal; README; folder organization; naming; Clean Code refactoring | Not started; keep behavioral, structural, and naming changes separate. |
 ## Execution sequence
 
@@ -37,7 +38,7 @@ Verification: discover and run meaningful unit and acceptance tests on both arch
 
 ### 2. Repair lifecycle failure handling and establish diagnostics
 
-Status: initial repairs implemented and independently reviewed. The failed-subclass regression was reproduced before repair (12 passed, 1 failed in the Win32 Unit suite). Actual separate-process termination and in-flight callback/DLL-unload safety remain unverified; simulated ownership tests do not establish those guarantees.
+Status: initial repairs implemented and independently reviewed. The failed-subclass regression was reproduced before repair (12 passed, 1 failed in the Win32 Unit suite). Phase 5 adds actual separate-process termination and native callback/module retention coverage; actual global-hook delivery and desktop use remain unverified.
 
 - Document `features/hook-lifecycle.feature` scenarios and add regressions for ignored hook startup failure and failed subclass registration.
 - Add coverage for shared versus process-local ownership, unrelated process detach, repeated cleanup, and shutdown following partial initialization. Use controlled failure injection for deterministic failure paths; add isolated process checks where ownership requires them.
@@ -72,6 +73,25 @@ Verification: unit/acceptance results on both architectures plus native test-own
 
 The canonical list is [`.ai/backlog.md`](../../backlog.md), with stable item IDs and separate requested/proposed work. Next priorities are B-001 (actual desktop/process-lifetime verification) and B-002 (remaining Settings coverage). Audio removal, README, folder organization, naming, and Clean Code work remain separate follow-up milestones. A single launcher/tray is proposed and would still manage both helper architectures.
 
+## Phase 5 execution
+
+The user authorized isolated process-lifetime tests and repairs after committing the initial checkpoint. No manual desktop testing has been performed. The implemented harness reuses production C lifecycle code and actual DllMain in a dedicated DLL loaded by separate, test-owned hidden-window processes; only global hook installation/removal is substituted. Private per-scenario DLL copies isolate shared PE data from the component test DLL. Named-pipe/event handshakes have deadlines, and owned kill-on-close jobs cover cleanup and constructor failure. Failed I/O cancellation has a bounded drain; only an unconfirmed failed operation retains its small heap context until test-host exit to avoid freeing pending kernel I/O storage.
+
+First actual-process regression run (Debug x64): 8 methods executed, 5 passed and 3 failed. Forced target termination stranded shared shutdown accounting; releasing an ordinary LoadLibrary reference unloaded the DLL with a native subclass installed, including while its callback was executing through the owned window procedure. Normal process detach, unrelated exit, two live owners, reserved native installation, and post-stop admission passed. These product failures drove the repairs below; an earlier helper startup issue was corrected separately and was not counted as product failure evidence.
+
+Repairs: replace the shared scalar with 64 atomic generation-tagged ownership records carrying full process/thread creation identities; reap only confirmed dead/replaced owners, reconcile abandoned local admission, retain live/unknown ownership, and preserve records across host restart. Registration reserves before native installation and rechecks the stopping gate; detach performs only local writes and exact-token atomic release. Pin engine code at host/hook/subclass entry with GetModuleHandleEx(PIN | FROM_ADDRESS), so callback return paths remain mapped until process exit. Normal component tests substitute pinning; isolated process fixtures use the real Windows operation.
+
+Verification: 12/12 focused process acceptance methods passed after repair. Four new unit methods cover pin failure, inaccessible/uncertain ownership, full birth-identity mismatch, and admission after an actual owner thread finishes; the focused Win32 lifecycle run passed 27/27. Supervisor and independent review inspected the actual ownership protocol, loader behavior, cleanup bounds, and test isolation. Contracts map to HL006–HL013 in `features/hook-lifecycle.feature`.
+
+| Platform | Debug full suite | Release full suite |
+| --- | --- | --- |
+| Win32 | 222/222 | 222/222 |
+| x64 | 222/222 | 222/222 |
+
+Fresh solution builds passed Debug, Release, Debug UNICODE, and Release UNICODE on both architectures. Independent Release suite filters passed Unit 82/82 and Acceptance 140/140 on both architectures. TRX results are under ignored `build/test-results/<platform>/<configuration>/`; initial red and focused green records are retained separately. No new global hooks, dependency installations, user INI changes, staging, or commits were involved.
+
+Tradeoffs and limits: pinned binaries remain loaded/locked until every affected process exits (or a different output path is used). The registry refuses admission on capacity/generation exhaustion and keeps shutdown busy when liveness cannot be established. A pre-publication thread-ID reuse can conservatively delay recovery; published IDs use full birth identities. The isolated tests substitute global hook installation/removal, so actual global-hook delivery, manual monitor/DPI behavior, and extended real desktop operation remain pending. The reported intermittent-stop cause is not established.
+
 ## Per-increment record
 
 For each implemented increment, record its completed scope, changed behavior, relevant feature/scenario IDs, executed unit/acceptance/build results by architecture, review outcome, and remaining limitations. Update statuses as work occurs; do not treat planned checks as passing checks. The first foundation baseline was 29/29 on each architecture; current results supersede that count without treating the baseline as proof of legacy correctness.
@@ -87,7 +107,7 @@ For each implemented increment, record its completed scope, changed behavior, re
 - Final Settings review reproduced four Apply acknowledgement/retry failures and two enabled-state-on-opening failures before repair. All four page handlers now return handled status and reset successful results; opening Settings preserves runtime enabled state while retaining the legacy INI reload.
 - Activation distance is intentionally inclusive. This replaces a legacy exclusive comparison; the corresponding expected behavior was explicitly documented instead of preserving source-derived assumptions.
 
-## Final automated verification and remaining work
+## Initial checkpoint automated verification and remaining work
 
 | Platform | Debug Unit + Acceptance | Release Unit + Acceptance | Separate Release filters |
 | --- | --- | --- | --- |
@@ -102,7 +122,7 @@ Commands: `.\tests\run-tests.ps1 -Platform <Win32|x64> -Configuration <Debug|Rel
 
 Remaining verification and design work:
 
-- Run actual x86/x64 target-application hook startup, repeated gestures, exit, and a long-duration trial. The intermittent-stop cause remains unconfirmed. Abrupt target-process termination may strand shared subclass accounting; in-flight callback and DLL-unload safety require a separate lifecycle increment.
+- Run actual x86/x64 target-application hook startup, repeated gestures, exit, and a long-duration trial. Phase 5 covers isolated termination and callback retention, but does not certify actual global-hook delivery or diagnose the reported intermittent stop.
 - Check representative applications at 100% and on the current HiDPI display, then mixed-DPI monitor transitions and the older home monitor. UI compatibility scaling is approved; fractional caller coordinates can round physical spacing to a representable value.
 - Exercise remaining actual Settings integrations, especially MDI, ignored/skinned classes, and tray behavior beyond the covered enabled-state opening interaction. Disabled aspect-ratio/auto-lineup features remain disabled. Opening-path tests substitute hidden actual Preferences creation for native property-sheet creation; full property-sheet interaction is not certified.
 - Preserve explicit impossible-fit limits: oversized movement uses an accessible-origin fallback; ordinary resizing does not translate an outside fixed edge; centered resizing cannot always fit if its original center is outside the desktop.

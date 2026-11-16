@@ -41,6 +41,26 @@ namespace AllSnapTests
         {
             return SnapTest_UnSubclass(static_cast<HWND>(window));
         }
+        BOOL WINAPI PinFails()
+        {
+            SetLastError(ERROR_ACCESS_DENIED);
+            return FALSE;
+        }
+        int WINAPI OwnerAccessUnknown(DWORD,DWORD,ULONGLONG,ULONGLONG,BOOL)
+        {
+            SetLastError(ERROR_ACCESS_DENIED);
+            return SNAP_OWNER_UNKNOWN;
+        }
+        DWORD WINAPI FinishRegistrationThread(void *)
+        {
+            HWND owned = CreateWindowEx(0,L"STATIC",L"allSnap finished-thread fixture",WS_POPUP,
+                -30000,-30000,320,240,nullptr,nullptr,GetModuleHandle(nullptr),nullptr);
+            if (!owned) return FALSE;
+            BOOL registered = SnapTest_Subclass(owned);
+            // The fake native operation intentionally has no WM_NCDESTROY callback.
+            DestroyWindow(owned);
+            return registered;
+        }
     }
 
     TEST_CLASS(LifecycleUnitTests)
@@ -225,6 +245,54 @@ namespace AllSnapTests
             Assert::IsTrue(SnapUnHookAll() != FALSE);
             Assert::IsTrue(StartHook());
             Assert::IsTrue(SnapTest_Subclass(window) != FALSE);
+        }
+        TEST_METHOD(PinFailureCannotAdmitAnUnsafeSubclass)
+        {
+            SNAP_LIFECYCLE_TEST_OPS operations = {
+                InstallHook,RemoveHook,InstallSubclass,RemoveSubclass,PinFails,nullptr};
+            SnapTest_SetLifecycleOps(&operations);
+            Assert::IsFalse(SnapTest_Subclass(window) != FALSE);
+            Assert::AreEqual(static_cast<DWORD>(ERROR_ACCESS_DENIED),GetLastError());
+            Assert::AreEqual(0,installCalls);
+            Assert::AreEqual(0L,SnapTest_ActiveSubclassCount());
+        }
+        TEST_METHOD(UnknownOwnerAccessDoesNotAuthorizeReaping)
+        {
+            Assert::IsTrue(StartHook());
+            Assert::IsTrue(SnapTest_Subclass(window) != FALSE);
+            SNAP_LIFECYCLE_TEST_OPS operations = {
+                InstallHook,RemoveHook,InstallSubclass,RemoveSubclass,nullptr,OwnerAccessUnknown};
+            SnapTest_SetLifecycleOps(&operations);
+            Assert::IsFalse(SnapCanUnHook() != FALSE);
+            Assert::IsFalse(SnapUnHookAll() != FALSE);
+            Assert::AreEqual(1L,SnapTest_ActiveSubclassCount());
+            Assert::IsTrue(SnapTest_SubclassWindow() == window);
+            Assert::IsTrue(SnapTest_UnSubclass(window) != FALSE);
+        }
+        TEST_METHOD(ProcessBirthMismatchReapsOldIdentityAndReconcilesLocalAdmission)
+        {
+            Assert::IsTrue(SnapTest_Subclass(window) != FALSE);
+            SnapTest_CorruptLocalOwnerBirth();
+            Assert::IsTrue(SnapCanUnHook() != FALSE);
+            Assert::IsTrue(SnapTest_Subclass(window) != FALSE);
+            Assert::AreEqual(2,installCalls);
+            Assert::AreEqual(1L,SnapTest_ActiveSubclassCount());
+        }
+        TEST_METHOD(FinishedOwnerThreadDoesNotStrandLocalAdmission)
+        {
+            HANDLE thread = CreateThread(nullptr,0,FinishRegistrationThread,nullptr,0,nullptr);
+            Assert::IsNotNull(thread);
+            DWORD wait = WaitForSingleObject(thread,5000),result = FALSE;
+            GetExitCodeThread(thread,&result);
+            Assert::AreEqual(static_cast<DWORD>(WAIT_OBJECT_0),wait);
+            Assert::AreEqual(static_cast<DWORD>(TRUE),result);
+            // Keep the terminated thread's handle open while the real liveness probe runs.
+            BOOL admitted = SnapTest_Subclass(window);
+            CloseHandle(thread);
+            Assert::IsTrue(admitted != FALSE);
+            Assert::AreEqual(2,installCalls);
+            Assert::AreEqual(0,removeCalls,L"A different thread must not attempt native removal for the dead owner.");
+            Assert::AreEqual(1L,SnapTest_ActiveSubclassCount());
         }
     };
 }
