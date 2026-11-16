@@ -216,25 +216,25 @@ BOOL	OnDBGContextMenu(HWND hWnd, HWND hwndCtl, UINT x, UINT y){
 
 void SubclassLB( HWND hLB)
 {  
-    ULONG ulOriginalProc;
+    LONG_PTR ulOriginalProc;
 
     // Get the original window procedure address and replace
     // it by our own
-    ulOriginalProc = SetWindowLong( 
+    ulOriginalProc = SetWindowLongPtr(
         hLB, 
         GWLP_WNDPROC, 
-        (ULONG)MyLBProc );
+        (LONG_PTR)MyLBProc );
 
     // Store the original window procedure address in
     // the user data of the button
-    SetWindowLong(
+    SetWindowLongPtr(
         hLB,
         GWLP_USERDATA,
         ulOriginalProc );
 }
 
 
-BOOL CALLBACK DebugProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam){
+INT_PTR CALLBACK DebugProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam){
 	
 	switch(uMsg){
 		HANDLE_MSG(hDlg,WM_GETMINMAXINFO,OnGetMinMax);
@@ -466,7 +466,7 @@ LRESULT CALLBACK MyLBProc(
 			break;
 	}           
 
-	pfProc = (WNDPROC)GetWindowLong(hWnd, GWLP_USERDATA );
+	pfProc = (WNDPROC)GetWindowLongPtr(hWnd, GWLP_USERDATA );
 	return CallWindowProc( pfProc, hWnd,uMsg, wParam, lParam );
 } 
 

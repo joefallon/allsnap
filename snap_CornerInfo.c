@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "snap_CornerInfo.h"
 
-BOOL isCornerOut (P_CORNER_INFO pci, enum SIDES v_side, enum SIDES h_side){
+BOOL isCornerOut (P_CORNER_INFO pci, enum SIDE v_side, enum SIDE h_side){
 	if (v_side == SIDE_TOP){
 		
 		if (h_side == SIDE_RIGHT){
@@ -23,9 +23,9 @@ BOOL isCornerOut (P_CORNER_INFO pci, enum SIDES v_side, enum SIDES h_side){
 	}
 }
 
-BOOL isSideOut (P_CORNER_INFO pci, enum SIDES side){
-	enum SIDES adj1 = AdjacentSide(side);
-	enum SIDES adj2 = OppositeSide(adj1);
+BOOL isSideOut (P_CORNER_INFO pci, enum SIDE side){
+	enum SIDE adj1 = AdjacentSide(side);
+	enum SIDE adj2 = OppositeSide(adj1);
 
 	if (isVerticalSide(side)){
 		return isCornerOut(pci,side,adj1) &&
@@ -37,9 +37,9 @@ BOOL isSideOut (P_CORNER_INFO pci, enum SIDES side){
 	}
 }
 
-BOOL isSideIn (P_CORNER_INFO pci, enum SIDES side){
-	enum SIDES adj1 = AdjacentSide(side);
-	enum SIDES adj2 = OppositeSide(AdjacentSide(side));
+BOOL isSideIn (P_CORNER_INFO pci, enum SIDE side){
+	enum SIDE adj1 = AdjacentSide(side);
+	enum SIDE adj2 = OppositeSide(AdjacentSide(side));
 
 	if (isVerticalSide(side)){
 		return (!isCornerOut(pci,side,adj1))
@@ -53,9 +53,9 @@ BOOL isSideIn (P_CORNER_INFO pci, enum SIDES side){
 
 #define XOR(x,y) (((x)||(y))&&!((x)&&(y)))
 
-BOOL isOnlyOneCornerOfSideOut (P_CORNER_INFO pci, enum SIDES side){
-	enum SIDES adj1 = AdjacentSide(side);
-	enum SIDES adj2 = OppositeSide(adj1);
+BOOL isOnlyOneCornerOfSideOut (P_CORNER_INFO pci, enum SIDE side){
+	enum SIDE adj1 = AdjacentSide(side);
+	enum SIDE adj2 = OppositeSide(adj1);
 
 	if (isVerticalSide(side)){
 		return XOR(isCornerOut(pci,side,adj1),isCornerOut(pci,side,adj2));

@@ -160,7 +160,7 @@ void Crop_LoadSizingInfo(HWND hwnd){
 }
 
 void UnCropSizingSideResults(SIDE_SNAP_RESULTS * p_ssnap){
-	enum SIDES side = p_ssnap->side;
+	enum SIDE side = p_ssnap->side;
 
 	if (side != SIDE_NONE){
 		int offset = GetSideOfRect(side,&(g_sizing_crop_info.offsets));
@@ -176,7 +176,7 @@ void Crop_UnCropSizingResults(SNAP_RESULTS * p_snap){
 }
 
 void UnCropSideResults(PCROP_INFO p_crop,SIDE_SNAP_RESULTS * p_ssnap){
-	enum SIDES side = p_ssnap->side;
+	enum SIDE side = p_ssnap->side;
 
 	if (side != SIDE_NONE){
 		int offset = GetSideOfRect(side,&(p_crop->cropped_rect)) -

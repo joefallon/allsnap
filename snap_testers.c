@@ -15,7 +15,7 @@ BOOL is_it_closer(int new_closeness,TEST_INFO * p_test_info,SIDE_SNAP_RESULTS * 
 void check_outside_snaps(TEST_INFO * pti,SNAP_RESULTS * psr,SNAP_RESULTS * last_psr,BOOL * p_oss_v, BOOL * p_oss_h);
 
 void remove_inside_snaps(SNAP_RESULTS * p_results);
-void remove_non_sizing_sides(SNAP_RESULTS * pr,enum SIDES h_side,enum SIDES v_side);
+void remove_non_sizing_sides(SNAP_RESULTS * pr,enum SIDE h_side,enum SIDE v_side);
 
 void AddOutsideSnap(SIDE_SNAP_RESULTS * pssr_updated,ResultStack  * p_rstck,SIDE_SNAP_RESULTS * pssr_last);
 void RemoveOutsideSnap(SIDE_SNAP_RESULTS * pssr_last,
@@ -178,7 +178,7 @@ void clear_snap_results (SNAP_RESULTS * p_snap_results){
 	clear_side_snap_results(&(p_snap_results->v));
 }
 
-INLINE void remove_non_sizing_sides(SNAP_RESULTS * pr,enum SIDES h_side,enum SIDES v_side){
+INLINE void remove_non_sizing_sides(SNAP_RESULTS * pr,enum SIDE h_side,enum SIDE v_side){
 
 	//keep the snaps if we're at a corner.
 	/*if (	!(		BOTH_SNAP(*pr) 

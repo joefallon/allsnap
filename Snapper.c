@@ -143,7 +143,7 @@ void snapper_OnSizing(HWND hWnd, WPARAM which_edge,LPRECT pRect){
 		//RECT alt_sizing_pos;
 
 		enum SIDE v_side = SIDE_NONE;
-		enum SIZE h_side = SIDE_NONE;
+		enum SIDE h_side = SIDE_NONE;
 
 		split_edge(which_edge,&v_side,&h_side);
 		WinRects_getRects(& test_rects);
@@ -205,8 +205,8 @@ void snapper_OnSizing(HWND hWnd, WPARAM which_edge,LPRECT pRect){
 void reposition_side(LPCRECT p_unsnapped, SIDE_SNAP_RESULTS * p_ssnap, 
 					 SIDE_SNAP_RESULTS * p_last_ssnap, LPRECT pRect){
 	
-	enum SIDES side			= p_ssnap->side;
-	enum SIDES last_side	= p_last_ssnap->side;  
+	enum SIDE side			= p_ssnap->side;
+	enum SIDE last_side	= p_last_ssnap->side;
 	
 	if (side != SIDE_NONE){
 		AlignToSide(pRect,side,p_ssnap->value);

@@ -8,7 +8,7 @@
 #define MY_DEBUG_STR (WM_APP + 121)
 
 extern HWND		 g_hwndDebug;
-BOOL CALLBACK	 DebugProc	(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK DebugProc	(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void			 Debug_printMsg(TCHAR * message);
 
 #endif

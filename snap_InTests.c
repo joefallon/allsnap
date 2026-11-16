@@ -3,18 +3,18 @@
 #include "snap_WinRects.h"
 
 
-BOOL InTests_GetClosestScreenToPt(POINT pt, enum SIDES side, int * p_dist,LPRECT pScreen){
+BOOL InTests_GetClosestScreenToPt(POINT pt, enum SIDE side, int * p_dist,LPRECT pScreen){
 	RECT pt_in_rect_form = {pt.x,pt.y,pt.x,pt.y};
 	*p_dist = InTests_GetClosestScreenToSide(side,&pt_in_rect_form,pScreen);
 	return (*p_dist != -1);
 }
 
-int InTests_GetClosestScreenToSide(enum SIDES side,LPCRECT pRect, LPRECT pScreen){
+int InTests_GetClosestScreenToSide(enum SIDE side,LPCRECT pRect, LPRECT pScreen){
 	int delta = 9999;
 	int screen_index = -1;
 	int i;
 	int test_val = GetSideOfRect(side,pRect);
-	enum SIDES op_side_low,op_side_high;
+	enum SIDE op_side_low,op_side_high;
 	int op_val_low,op_val_high;
 	BOOL is_larger = isLargerSide(side);
 

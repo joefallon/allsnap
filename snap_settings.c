@@ -38,30 +38,30 @@ static CB_VK_ITEM g_aToggleKeys[] =	{
 	{VK_TAB,	 _T("Tab")	}
 						};
 
-static HGRID_RADIOS[] = {
+static int HGRID_RADIOS[] = {
 	IDC_RADIO_H_EVEN,
 	IDC_RADIO_H_PIXELS,
 	IDC_RADIO_H_SINGLE
 };
-static VGRID_RADIOS[] = {
+static int VGRID_RADIOS[] = {
 	IDC_RADIO_V_EVEN,
 	IDC_RADIO_V_PIXELS,
 	IDC_RADIO_V_SINGLE
 };
-static HGRID_EDITS[] = 
+static int HGRID_EDITS[] =
 {
 	IDC_H_NUM_EVEN,
 	IDC_H_PIXELS_BTWN,
 	IDC_H_PIXELS_FROM_TOP
 };
-static VGRID_EDITS[] = 
+static int VGRID_EDITS[] =
 {
 	IDC_V_NUM_EVEN,
 	IDC_V_PIXELS_BTWN,
 	IDC_V_PIXELS_FROM_LEFT
 };
 
-static DEFAULT_GRID_VALS[] = {1,2,0};
+static int DEFAULT_GRID_VALS[] = {1,2,0};
 
 static const int NUM_HGRID_EDITS = sizeof(HGRID_EDITS)/sizeof(HGRID_EDITS[0]);
 static const int NUM_VGRID_EDITS = sizeof(VGRID_EDITS)/sizeof(VGRID_EDITS[0]);
@@ -136,7 +136,7 @@ void	TestSound(HWND hDlg,HWND hwndCtrl, enum SNAP_SOUNDS which_sound);
 
 UINT	getSelectedToggleKey	(HWND hDlg);
 //void	EnableButtons			(HWND hDlg,BOOL is_enabled);
-BOOL	BrowseFile				(HWND hDlg,enum SNAP_SOUND which_sound);
+BOOL	BrowseFile				(HWND hDlg,enum SNAP_SOUNDS which_sound);
 
 void CenterWindow(HWND hwnd);
 
@@ -952,7 +952,7 @@ INLINE void ApplySounds(HWND hDlg){
 	SnapSounds_setPath(SOUND_UNSNAP,path_buffer);
 }
 
-void TestSound(HWND hDlg,HWND hwndCtrl,enum SNAP_SOUND which_sound){
+void TestSound(HWND hDlg,HWND hwndCtrl,enum SNAP_SOUNDS which_sound){
 	static BOOL snap_playing = FALSE;
 	static BOOL unsnap_playing = FALSE;
 	TCHAR file_name[MAX_PATH];
@@ -968,7 +968,7 @@ void TestSound(HWND hDlg,HWND hwndCtrl,enum SNAP_SOUND which_sound){
 	SnapSounds_Test(file_name);
 }
 
-BOOL BrowseFile(HWND hDlg,enum SNAP_SOUND which_sound){
+BOOL BrowseFile(HWND hDlg,enum SNAP_SOUNDS which_sound){
 
 	TCHAR szFileName[MAX_PATH];
 	static BOOL first_time=TRUE;

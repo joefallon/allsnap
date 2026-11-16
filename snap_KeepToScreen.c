@@ -9,23 +9,23 @@
 
 
 
-void testSingleCorner(SNAP_RESULTS * p_snap_results,enum SIDES h_side,enum SIDES v_side,enum SIDES ignored_side,LPCRECT pRect);
+void testSingleCorner(SNAP_RESULTS * p_snap_results,enum SIDE h_side,enum SIDE v_side,enum SIDE ignored_side,LPCRECT pRect);
 
 //BOOL willKeepingPushOffScreen(enum SIDES k_side, LPCRECT pRect, LPCRECT pScreen);
-BOOL isWholeSideOut_Sizing(enum SIDES side,TEST_INFO * p_test_info, LPRECT pScreen, P_CORNER_INFO pci);
-BOOL isWholeSideOut_Moving(enum SIDES side,TEST_INFO * p_test_info, LPCRECT pRect,LPRECT pScreen,P_CORNER_INFO pci);
-BOOL isWholeSideOut(enum SIDES side,TEST_INFO * p_test_info, LPCRECT pRect,LPRECT pScreen,P_CORNER_INFO pci);
-BOOL testWholeDimension(enum SIDES first_side,
-						enum SIDES second_side,
+BOOL isWholeSideOut_Sizing(enum SIDE side,TEST_INFO * p_test_info, LPRECT pScreen, P_CORNER_INFO pci);
+BOOL isWholeSideOut_Moving(enum SIDE side,TEST_INFO * p_test_info, LPCRECT pRect,LPRECT pScreen,P_CORNER_INFO pci);
+BOOL isWholeSideOut(enum SIDE side,TEST_INFO * p_test_info, LPCRECT pRect,LPRECT pScreen,P_CORNER_INFO pci);
+BOOL testWholeDimension(enum SIDE first_side,
+						enum SIDE second_side,
 						TEST_INFO * p_test_info,
 						LPCRECT pRect,
 						LPRECT pScreen,
 						P_CORNER_INFO pci,
-						enum SIDES * p_kept_side);
+						enum SIDE * p_kept_side);
 void KeepTopLeftOnScreen(SNAP_RESULTS * p_sr, LPCRECT pRect);
 
 
-void OverwriteResult(SNAP_RESULTS * p_snap_results,enum SIDES which_side,LPCRECT pScreen){
+void OverwriteResult(SNAP_RESULTS * p_snap_results,enum SIDE which_side,LPCRECT pScreen){
 	SIDE_SNAP_RESULTS  * p_side_r = (isVerticalSide(which_side))?
 		&(p_snap_results->v):&(p_snap_results->h);
 
@@ -36,7 +36,7 @@ void OverwriteResult(SNAP_RESULTS * p_snap_results,enum SIDES which_side,LPCRECT
 
 }
 
-BOOL isWholeSideOut_Sizing(enum SIDES side,TEST_INFO * p_test_info, LPRECT pScreen, P_CORNER_INFO pci)
+BOOL isWholeSideOut_Sizing(enum SIDE side,TEST_INFO * p_test_info, LPRECT pScreen, P_CORNER_INFO pci)
 {
 	LPCRECT pRect = p_test_info->mine;
 	if (!isSideIn(pci,side)){
@@ -52,7 +52,7 @@ BOOL isWholeSideOut_Sizing(enum SIDES side,TEST_INFO * p_test_info, LPRECT pScre
 	}
 }
 
-BOOL isWholeSideOut_Moving(enum SIDES side,TEST_INFO * p_test_info, LPCRECT pRect,LPRECT pScreen,P_CORNER_INFO pci){
+BOOL isWholeSideOut_Moving(enum SIDE side,TEST_INFO * p_test_info, LPCRECT pRect,LPRECT pScreen,P_CORNER_INFO pci){
 	if (isSideOut(pci,side)){
 
 		InTests_GetClosestScreenToSide(side,pRect,pScreen);
@@ -66,7 +66,7 @@ BOOL isWholeSideOut_Moving(enum SIDES side,TEST_INFO * p_test_info, LPCRECT pRec
 }
 
 
-BOOL isWholeSideOut(enum SIDES side,TEST_INFO * p_test_info, LPCRECT pRect,LPRECT pScreen,P_CORNER_INFO pci){
+BOOL isWholeSideOut(enum SIDE side,TEST_INFO * p_test_info, LPCRECT pRect,LPRECT pScreen,P_CORNER_INFO pci){
 	if (p_test_info->sizing){
 		return isWholeSideOut_Sizing(side,p_test_info,pScreen,pci);
 	}
@@ -75,13 +75,13 @@ BOOL isWholeSideOut(enum SIDES side,TEST_INFO * p_test_info, LPCRECT pRect,LPREC
 	}
 }
 
-BOOL testWholeDimension(enum SIDES first_side,
-						enum SIDES second_side,
+BOOL testWholeDimension(enum SIDE first_side,
+						enum SIDE second_side,
 						TEST_INFO * p_test_info,
 						LPCRECT pRect,
 						LPRECT pScreen,
 						P_CORNER_INFO pci,
-						enum SIDES * p_kept_side)
+						enum SIDE * p_kept_side)
 {
 	if		(isWholeSideOut(first_side,p_test_info,pRect,pScreen,pci)){
 		*p_kept_side = first_side;
@@ -108,7 +108,7 @@ void KeepToScreen(
 	CORNER_INFO ci;
 	RECT  screen_rect;
 	
-	enum SIDES kept_side = SIDE_NONE;
+	enum SIDE kept_side = SIDE_NONE;
 
 	//WinRects_getCurrentScreen(&screen_rect);
 	InTests_TestAllCorners(&ci,&keptRect);
@@ -157,12 +157,12 @@ void KeepToScreen(
 }
 
 
-void testSingleCorner(SNAP_RESULTS * p_snap_results,enum SIDES h_side,enum SIDES v_side,enum SIDES ignored_side,LPCRECT pRect){
+void testSingleCorner(SNAP_RESULTS * p_snap_results,enum SIDE h_side,enum SIDE v_side,enum SIDE ignored_side,LPCRECT pRect){
 		RECT h_screen;
 		RECT v_screen;
 		int h_dist = -1;
 		int v_dist = -1;
-		enum SIDES closest_side = SIDE_NONE;
+		enum SIDE closest_side = SIDE_NONE;
 		BOOL has_h = FALSE;
 		BOOL has_v = FALSE;
 		LPCRECT pScreen;

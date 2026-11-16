@@ -11,10 +11,10 @@ typedef struct CORNER_INFO_TAG{
 	BOOL bottomRight_out;
 } CORNER_INFO, * P_CORNER_INFO;
 
-BOOL isCornerOut (P_CORNER_INFO pci, enum SIDES v_side, enum SIDES h_side);
-BOOL isSideOut	 (P_CORNER_INFO pci, enum SIDES side);
-BOOL isSideIn	 (P_CORNER_INFO pci, enum SIDES side);
-BOOL isOnlyOneCornerOfSideOut (P_CORNER_INFO pci, enum SIDES side);
+BOOL isCornerOut (P_CORNER_INFO pci, enum SIDE v_side, enum SIDE h_side);
+BOOL isSideOut	 (P_CORNER_INFO pci, enum SIDE side);
+BOOL isSideIn	 (P_CORNER_INFO pci, enum SIDE side);
+BOOL isOnlyOneCornerOfSideOut (P_CORNER_INFO pci, enum SIDE side);
 
 
 void updateCornerInfo(P_CORNER_INFO pci,LPCRECT pRect);

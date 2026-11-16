@@ -114,6 +114,6 @@ DWORD mapID(DWORD ctrlid){
 	HtmlHelp(hwndCtl,
 			NULL,//_T("allSnap.chm::/ctxhelp.txt"),
 			HH_DISPLAY_TEXT_POPUP ,
-			(DWORD)&hPop) ;
+			(DWORD_PTR)&hPop) ;
 #endif
  }
