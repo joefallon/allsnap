@@ -59,6 +59,14 @@ All eight solution configuration/platform combinations compile and link successf
 
 No automated test project, test runner, CI workflow, or repository build wrapper was found. `snap_testers.c` and `snap_InTests.c` implement production geometry checks, not a regression suite. Debug configurations expose a diagnostic dialog through `snap_debug.c`. No tests or application launches have been performed; modern Windows behavior, including confinement, visual gaps, and long-running stability, remains unverified.
 
+## Modernization work in discussion
+
+Draft requirements and the living implementation plan are in `.ai/features/20261116-modernization/project-spec.md` and `implementation-plan.md` in that directory. They propose one Microsoft Native C++ test framework for both unit and acceptance tests; its headers, x86/x64 libraries, and VSTest runner are installed locally, but no test project has been added. Root `features/*.feature` files are documentation used to write acceptance tests, with no Gherkin runner or parser.
+
+The user identifies desktop confinement as the reliable behavior to protect. Initial proposed work is confinement regression coverage, hook/subclass failure handling, monitor/grid accounting and input validation, then diagnosis of snapping gaps. Inspection confirmed ignored hook-install failure, failed-subclass state not rolled back, shared/process-local subclass ownership inconsistency, and grid guides consuming the monitor-enumeration counter (`snap_App.c`, `snap_lib.c`, `snap_WinRects.c`). These findings have not established the cause of intermittent stops. No runtime repair has been implemented in this planning pass.
+
+Requested backlog: remove all sound-related functionality, including its UI, thread/messages, persistence, assets, and installer references. Existing sound code remains in place; restoring notification playback is not planned. Keep this briefing aligned with actual implementation and the implementation plan aligned with progress and executed validation.
+
 ## Consequential constraints and gaps
 
 - `snapit.rc` embeds the checked-in, architecture-neutral `allSnap.exe.manifest`, enabling common controls v6 and running as the invoking user. The executable linker does not generate a second manifest. The DLL resource uses SDK headers rather than the old MFC-only `afxres.h`.
