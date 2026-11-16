@@ -31,6 +31,16 @@ confinement oracle uses GDI region union/difference independently of the product
 placement solver. Automated coverage does not replace actual global-hook delivery,
 mixed-DPI transitions, or long-running desktop validation.
 
+Settings acceptance tests create the actual modeless property sheet with its
+production resources and controllers, then hide the owned sheet. Apply/OK/Cancel,
+tab validation, save failure/retry, and functional non-sound controls run through
+native property-sheet notifications. Tray tests compile the real tray controller
+and substitute only Shell_NotifyIcon; no icon is added to the user's taskbar.
+Window-filter tests use owned native top-level/MDI windows and the production
+collector with controlled work areas. Settings fixtures restore crop/key/class
+state and use temporary INI files. Context-help rendering, keyboard navigation,
+actual Explorer delivery, and audio are outside these automated checks.
+
 Process-lifetime acceptance tests build `tests/process/allsnap_process_engine.vcxproj`
 and `allsnap_process_helper.vcxproj` through test-project references. Each scenario
 copies the dedicated engine DLL into a private directory under the ignored test

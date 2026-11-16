@@ -1,6 +1,6 @@
 # allSnap modernization implementation plan
 
-Status: initial repair checkpoint committed by the user; Phase 5 isolated process-lifetime repairs implemented and independently reviewed. All 222 tests pass in Debug/Release on Win32/x64, and all eight solution builds pass. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
+Status: Phase 6 non-sound Settings audit and demonstrated repairs implemented and independently reviewed. All 277 tests pass in Debug/Release on Win32/x64, and all eight solution builds pass. Manual global-hook/desktop validation remains pending. This is a living execution document. Update the relevant step, verification result, and outstanding issue after each increment; update `.ai/current-state.md` when actual architecture or behavior changes. Requirements are in `project-spec.md`.
 
 ## Current position
 
@@ -8,18 +8,19 @@ Status: initial repair checkpoint committed by the user; Phase 5 isolated proces
 - Completed: verified local availability of Microsoft's native C++ testing headers, x86/x64 libraries, and VSTest runner. Approved as the common unit/acceptance framework; no dependencies installed.
 - Confirmed with user: root `features/*.feature` files are documentation only; no Gherkin tooling.
 - Confirmed with user: all sound functionality is to be removed in a future backlog increment.
-- Native unit/acceptance tests now cover 222 methods (82 unit, 140 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
+- Native unit/acceptance tests now cover 277 methods (94 unit, 183 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
 - User handles all commits. Agents do not stage, commit, reset, or amend. Phase boundaries below are review checkpoints, not claims of commits already created.
 
 ## Milestones and human commit checkpoints
 
 | Phase | Reviewable scope | Current verification |
 | --- | --- | --- |
-| 1. Test foundation | Microsoft framework, runner, documentation, production-C fixture seams, initial confinement/snapping contracts | Implemented. Current suite: 222/222 in all four architecture/configuration runs. Later contract review corrected an inherited threshold assumption. |
+| 1. Test foundation | Microsoft framework, runner, documentation, production-C fixture seams, initial confinement/snapping contracts | Implemented. Current suite: 277/277 in all four architecture/configuration runs. Later contract review corrected inherited assumptions rather than freezing legacy outputs. |
 | 2. Lifecycle reliability | Hook/subclass ownership and failures, safe shutdown bookkeeping, diagnostics | Initial failure-handling checkpoint passed 23 focused tests. Phase 5 supersedes scalar accounting and simulated ownership with a process-aware registry and actual child-process coverage. |
 | 3. Monitor/grid and Settings repairs | Workarea/guide separation, validation, Old position, Settings persistence and failure reporting, held-key semantics | Implemented. Geometry, Old position, input, validation reentrancy, Apply acknowledgement/retry, and opening-state regressions demonstrated red before repair; final suite green on both architectures. Remaining Settings paths require desktop validation. |
 | 4. Visible frames, spacing, and desktop geometry | DWM/region/manual crop composition, collapsed spacing UI/INI, ordinary/HiDPI coordinates, monitor union confinement | Implemented. Independent GDI coverage oracle plus native framed ordinary/Ctrl resize cases are green in the final matrix. Real mixed-DPI transitions and home-monitor checks remain pending. |
 | 5. Isolated process lifetime | Actual child-process termination/detach, concurrent owners, shutdown reservations, callback/module retention | Implemented and independently reviewed. Three product failures demonstrated before repair; 12 isolated-process methods and four new unit tests pass within the 222-test matrix. Global-hook/desktop validation remains separate. |
+| 6. Settings behavior audit | Non-sound controls, actual property sheet, tray boundary, persisted validation, MDI and class filtering | Implemented and independently reviewed. Added 55 methods; final 277-test matrix and all eight builds pass. Actual Shell/global-hook delivery and manual UX/hardware checks remain separate. |
 | Later backlog phases | Audio removal; README; folder organization; naming; Clean Code refactoring | Not started; keep behavioral, structural, and naming changes separate. |
 ## Execution sequence
 
@@ -92,6 +93,32 @@ Fresh solution builds passed Debug, Release, Debug UNICODE, and Release UNICODE 
 
 Tradeoffs and limits: pinned binaries remain loaded/locked until every affected process exits (or a different output path is used). The registry refuses admission on capacity/generation exhaustion and keeps shutdown busy when liveness cannot be established. A pre-publication thread-ID reuse can conservatively delay recovery; published IDs use full birth identities. The isolated tests substitute global hook installation/removal, so actual global-hook delivery, manual monitor/DPI behavior, and extended real desktop operation remain pending. The reported intermittent-stop cause is not established.
 
+## Phase 6 execution and coverage inventory
+
+The user committed Phase 5 before authorizing this audit. Production C/Win32 architecture, UI compatibility scaling, legacy key names, and the Microsoft unit/acceptance framework remain unchanged. No sound removal or new Settings UI was included.
+
+| Area | Audited behavior and evidence |
+| --- | --- |
+| Preferences | Native dirty state, five destinations, enabled, all four toggle choices, threshold numbers/spinners and spacing; Apply/OK/Cancel and tab validation. Spinner maximum now matches the existing 100 endpoint. Contracts ST-010–ST-013, ST-019. |
+| Grid | Both axes, all three modes, enabled state, selected/unused edit validation, boundaries and persistence. Disabling an axis retains its mode/value. Guides work independently of Desktop edges for moving/resizing, including native MDI client-relative grids. SINGLE zero is a valid unpadded boundary guide; EVEN zero yields no guides and PIXELS zero is invalid. Contracts ST-014–ST-015, ST-021–ST-022, MG05–MG08. |
+| Advanced | All seven live checkboxes, including inverse mappings, plus enabled/disabled crop input and bounds. Native owned-window tests verify MDI admission, ignored/minimized destination filtering, clipping/manual crop consistency, and safe excessive crop retaining one visible row. Contracts ST-016–ST-017, ST-020, WF-001–WF-006. |
+| Tray integration | Real tray controller, resource icon/tooltip selection, hide/unhide, Explorer-recovery function and failed-add retry; only Shell_NotifyIcon is substituted. Dialog INI reload skips enabled/icon-hidden setters so recovery state is preserved without transient changes. Contracts TR-001–TR-004, INI-004. |
+| INI-only settings | Center/equal-key persistence remains covered; equal/aspect behavior stays compile-disabled. Exact semicolon class lists support full native class names, missing values preserve state and explicit empty values clear lists. Strict full-token numeric loading rejects invalid/overflowing values, retains decimal/legacy hex formats, normalizes booleans, and enforces persisted threshold bounds. Contracts INI-001–INI-003 and WF-001–WF-002/WF-006. |
+| Deliberately inactive controls | Auto-lineup stays hidden/disabled; quiet-fast has no current resource control. Audio remains deferred. |
+
+Red/green evidence: the initial native Settings run had seven owned failures plus the recovered-icon regression; the filter/crop run failed 10 of 16 methods; INI validation failed four of five; tray integration failed one of four. A strict-parser hex compatibility regression was caught during review and repaired with its own test. A green intermediate 270-test matrix did not end the audit: four more grid failures exposed Desktop coupling/SINGLE-zero handling, followed by two native MDI guide failures. All demonstrated failures are repaired in the final suite.
+
+The audit adds 55 methods over the committed 222-test baseline: native modeless property-sheet interaction, direct controller/INI/Shell boundary tests, and owned top-level/MDI collection through actual matching/move/resize. Settings fixtures snapshot and restore crop/key/class state. Supervisor and independent review inspected actual changes; no required corrections remain.
+
+| Platform | Debug full suite | Release full suite | Separate Release filters |
+| --- | --- | --- | --- |
+| Win32 | 277/277 | 277/277 | Unit 94/94; Acceptance 183/183 |
+| x64 | 277/277 | 277/277 | Unit 94/94; Acceptance 183/183 |
+
+All eight solution builds passed after the final MDI grid correction. TRX files remain under ignored `build/test-results/<platform>/<configuration>/`; focused red/green records have distinct names. No global hooks, actual Shell icons, user INI changes, dependency installations, staging, or commits were involved.
+
+Limits: native functional controls are covered, but context-help rendering, keyboard focus/tab order, actual Explorer notifications, host tray-menu command dispatch, and real desktop/global-hook/DPI/long-duration behavior still need validation. Apply persistence remains sequential, with no atomic rollback guarantee on save failure. These checks do not diagnose the reported intermittent stop or certify every setting combination.
+
 ## Per-increment record
 
 For each implemented increment, record its completed scope, changed behavior, relevant feature/scenario IDs, executed unit/acceptance/build results by architecture, review outcome, and remaining limitations. Update statuses as work occurs; do not treat planned checks as passing checks. The first foundation baseline was 29/29 on each architecture; current results supersede that count without treating the baseline as proof of legacy correctness.
@@ -124,6 +151,6 @@ Remaining verification and design work:
 
 - Run actual x86/x64 target-application hook startup, repeated gestures, exit, and a long-duration trial. Phase 5 covers isolated termination and callback retention, but does not certify actual global-hook delivery or diagnose the reported intermittent stop.
 - Check representative applications at 100% and on the current HiDPI display, then mixed-DPI monitor transitions and the older home monitor. UI compatibility scaling is approved; fractional caller coordinates can round physical spacing to a representable value.
-- Exercise remaining actual Settings integrations, especially MDI, ignored/skinned classes, and tray behavior beyond the covered enabled-state opening interaction. Disabled aspect-ratio/auto-lineup features remain disabled. Opening-path tests substitute hidden actual Preferences creation for native property-sheet creation; full property-sheet interaction is not certified.
+- Phase 6 now exercises native property-sheet controls, owned MDI/class filtering, and the real tray controller through a substituted Shell boundary. Still validate actual Explorer delivery, host menu dispatch, context help and keyboard navigation. Disabled aspect-ratio/auto-lineup features remain disabled; audio remains deferred.
 - Preserve explicit impossible-fit limits: oversized movement uses an accessible-origin fallback; ordinary resizing does not translate an outside fixed edge; centered resizing cannot always fit if its original center is outside the desktop.
 - Review this checkpoint with the user before starting the separately listed audio, layout, naming, and refactoring backlog phases. The user owns commits.

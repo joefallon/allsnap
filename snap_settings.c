@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <windowsx.h>
 #include <tchar.h>
+#include <limits.h>
 
 //stupid icon button
 #include <uxtheme.h>
@@ -119,6 +120,8 @@ INT_PTR CALLBACK AdvProc(HWND,UINT,WPARAM,LPARAM);
 INT_PTR CALLBACK GridProc(HWND,UINT,WPARAM,LPARAM);
 
 void ValidatePrefs(HWND hDlg);
+BOOL ValidateAdv(HWND hDlg);
+BOOL ValidateGrid(HWND hDlg);
 
 LRESULT Prefs_OnInitDialog	(HWND hwnd, HWND hwndFocus, LPARAM lParam);
 LRESULT Sounds_OnInitDialog	(HWND hwnd, HWND hwndFocus, LPARAM lParam);
@@ -174,12 +177,9 @@ HWND DoPropertySheet(HWND hwndOwner)
 {
     PROPSHEETPAGE psp[4];
     PROPSHEETHEADER psh;
-    BOOL current_enabled = isEnabled();
 
 	InitCmnCtls();
-	LoadSettingsFromINI();
-	// Opening Settings must not undo an unsaved tray toggle.
-	setEnabled(current_enabled);
+	LoadSettingsForDialog();
 
     psp[0].dwSize = sizeof(PROPSHEETPAGE);
     psp[0].dwFlags = PSP_USETITLE;
@@ -403,6 +403,10 @@ INT_PTR CALLBACK AdvProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			switch (lpnmhdr->code)
 				{
 				case PSN_APPLY:   //sent when OK or Apply button pressed
+					if (!ValidateAdv(hDlg)){
+						SetWindowLongPtr(hDlg,DWLP_MSGRESULT,PSNRET_INVALID_NOCHANGEPAGE);
+						return TRUE;
+					}
 					ApplyAdv(hDlg);
 					SaveAppliedSettings(hDlg);
 					return TRUE;
@@ -410,6 +414,7 @@ INT_PTR CALLBACK AdvProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					break;
 				
 				case PSN_KILLACTIVE:
+					ValidateAdv(hDlg);
 					return TRUE;
 
 				default:
@@ -441,6 +446,10 @@ INT_PTR CALLBACK GridProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			switch (lpnmhdr->code)
 				{
 				case PSN_APPLY:   //sent when OK or Apply button pressed
+					if (!ValidateGrid(hDlg)){
+						SetWindowLongPtr(hDlg,DWLP_MSGRESULT,PSNRET_INVALID_NOCHANGEPAGE);
+						return TRUE;
+					}
 					ApplyGrid(hDlg);
 					SaveAppliedSettings(hDlg);
 					return TRUE;
@@ -448,6 +457,7 @@ INT_PTR CALLBACK GridProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					break;
 				
 				case PSN_KILLACTIVE:
+					ValidateGrid(hDlg);
 					return TRUE;
 
 				default:
@@ -500,6 +510,53 @@ void ValidatePrefs(HWND hDlg){
 		}
 	}
 	SetWindowLongPtr(hDlg,DWLP_MSGRESULT,FALSE);
+}
+
+static BOOL ValidateInteger(HWND page,int control,int minimum,int maximum,LPCTSTR message){
+	BOOL valid;
+	int value = (int)GetDlgItemInt(page,control,&valid,TRUE);
+	if (valid && value >= minimum && value <= maximum)
+		return TRUE;
+	MessageBox(page,message,_T("allSnap - Invalid setting"),MB_OK|MB_ICONEXCLAMATION);
+	Edit_SetSel(GetDlgItem(page,control),0,-1);
+	SetFocus(GetDlgItem(page,control));
+	SetWindowLongPtr(page,DWLP_MSGRESULT,TRUE);
+	return FALSE;
+}
+
+BOOL ValidateAdv(HWND page){
+	if (Is_Checked(page,IDC_CROPTOPC) && !ValidateInteger(page,IDC_CROPTOP,0,INT_MAX,
+		_T("Enter a whole number from 0 to 2147483647 for top cropping.")))
+		return FALSE;
+	SetWindowLongPtr(page,DWLP_MSGRESULT,FALSE);
+	return TRUE;
+}
+
+static BOOL ValidateGridDimension(HWND page,int enabled,const int radios[],const int edits[]){
+	int mode;
+	if (!Is_Checked(page,enabled))
+		return TRUE;
+	for (mode=0;mode<3;mode++){
+		if (Is_Checked(page,radios[mode])){
+			return ValidateInteger(page,edits[mode],mode==GRIDTYPE_PIXELS ? 1 : 0,
+				mode==GRIDTYPE_EVEN ? 100 : INT_MAX,
+				mode==GRIDTYPE_EVEN ? _T("Enter from 0 to 100 evenly spaced grid lines.") :
+				mode==GRIDTYPE_PIXELS ? _T("Enter a whole pixel spacing from 1 to 2147483647.") :
+				_T("Enter a whole grid offset from 0 to 2147483647 pixels."));
+		}
+	}
+	MessageBox(page,_T("Select a grid mode."),_T("allSnap - Invalid setting"),MB_OK|MB_ICONEXCLAMATION);
+	SetFocus(GetDlgItem(page,radios[0]));
+	SetWindowLongPtr(page,DWLP_MSGRESULT,TRUE);
+	return FALSE;
+}
+
+BOOL ValidateGrid(HWND page){
+	if (!ValidateGridDimension(page,IDC_CHECK_HORIZONTAL,HGRID_RADIOS,HGRID_EDITS) ||
+		!ValidateGridDimension(page,IDC_CHECK_VERTICAL,VGRID_RADIOS,VGRID_EDITS))
+		return FALSE;
+	SetWindowLongPtr(page,DWLP_MSGRESULT,FALSE);
+	return TRUE;
 }
 /*******************************************************************************************
 	INIT functions
@@ -643,14 +700,14 @@ void InitGeneral(HWND hDlg){
 		IDC_WIN_THRESH_SPIN,
 		UDM_SETRANGE,
         (WPARAM)0,
-        (LPARAM) MAKELONG((short) 99, (short) 2));
+        (LPARAM) MAKELONG((short) MAX_THRESH, (short) MIN_THRESH));
 
 	SendDlgItemMessage(
 		hDlg,
 		IDC_SCREEN_THRESH_SPIN,
 		UDM_SETRANGE,
         (WPARAM)0,
-        (LPARAM) MAKELONG((short) 99, (short) 2));
+        (LPARAM) MAKELONG((short) MAX_THRESH, (short) MIN_THRESH));
 
 
 	InitToggleKeys(GetDlgItem(hDlg,IDC_TOGGLEKEYS),
@@ -891,7 +948,8 @@ void get_grid_selections
 }
 
 void ApplyGrid(HWND hDlg){
-	gridsnap_settings_t new_grid_snap = {0};
+	gridsnap_settings_t new_grid_snap;
+	getGridSnap(&new_grid_snap);
 	get_grid_selections
 	(
 		hDlg,
@@ -950,7 +1008,10 @@ INLINE void ApplyThresh(HWND hDlg){
 }
 
 INLINE void ApplyAdv(HWND hDlg){
-	int new_crop_val = GetDlgItemInt(hDlg,IDC_CROPTOP,NULL,FALSE); 
+	BOOL valid;
+	int new_crop_val = (int)GetDlgItemInt(hDlg,IDC_CROPTOP,&valid,TRUE);
+	if (!valid || new_crop_val < 0)
+		new_crop_val = getCropTop();
 	setSnapMdi			( Is_Checked(hDlg,IDC_SNAPMDI));
 	setDisableToggle	(!Is_Checked(hDlg,IDC_INVTOGGLE));
 	setSnappingInsides	(!Is_Checked(hDlg,IDC_INSIDES));

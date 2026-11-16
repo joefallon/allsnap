@@ -878,6 +878,7 @@ int  WINAPI getScreenThresh(void){
 
 
 void WINAPI setCropTop(int crop_top){
+	if (crop_top < 0) return;
 	g_crop_top = crop_top;
 }
 
@@ -926,7 +927,7 @@ void WINAPI setKeptToScreen(BOOL kept_to_screen){
 }
 
 void WINAPI setSkinnedClasses(TCHAR * sz,int len){
-	if (len > MAX_CLASSNAME_LIST_LENGTH){
+	if (sz == NULL || len < 0 || len >= MAX_CLASSNAME_LIST_LENGTH){
 		return;
 	}
 	lstrcpyn(g_skinned_classes,sz,MAX_CLASSNAME_LIST_LENGTH);
@@ -937,7 +938,7 @@ TCHAR *  getSkinnedClasses(void){
 }
 
 void WINAPI setIgnoredClasses(TCHAR * sz,int len){	
-	if (len > MAX_CLASSNAME_LIST_LENGTH){
+	if (sz == NULL || len < 0 || len >= MAX_CLASSNAME_LIST_LENGTH){
 		return;
 	}
 

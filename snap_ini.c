@@ -10,6 +10,8 @@
 #include "snap_taskbar.h"
 #include "snap_lineup.h"
 #include "snap_grid.h"
+#include <errno.h>
+#include <limits.h>
 
 TCHAR INI_NAME[] = _T("allsnap.ini");
 TCHAR INI_PATH[MAX_PATH];
@@ -109,21 +111,23 @@ BOOL INIgetStringVal(LPCTSTR value_name,TCHAR * string,int * p_ret_len,int max_l
 
 
 BOOL getInt(LPCTSTR value_name,int * p_int,LPCTSTR inipath){
-#define BAD_INT_VAL (-67)
-	int keyResult;
-
-	keyResult = GetPrivateProfileInt(
-		INI_SECTION,
-		value_name,	// value name
-		BAD_INT_VAL,		// reserved
-		inipath
-	);
-
-	if (keyResult != BAD_INT_VAL){
-		*p_int = keyResult;
-	}
-
-	return (keyResult!= BAD_INT_VAL);
+	TCHAR buffer[64], * end, * prefix;
+	long value;
+	int base = 10;
+	DWORD length = GetPrivateProfileString(INI_SECTION,value_name,NULL,buffer,chDIMOF(buffer),inipath);
+	if (length == 0 || length >= chDIMOF(buffer)-1) return FALSE;
+	prefix = buffer;
+	while (_istspace((unsigned short)*prefix)) ++prefix;
+	if (*prefix == _T('+') || *prefix == _T('-')) ++prefix;
+	/* Preserve legacy 0x values without interpreting leading-zero decimals as octal. */
+	if (prefix[0] == _T('0') && (prefix[1] == _T('x') || prefix[1] == _T('X'))) base = 16;
+	errno = 0;
+	value = _tcstol(buffer,&end,base);
+	if (end == buffer || errno == ERANGE || value < INT_MIN || value > INT_MAX) return FALSE;
+	while (_istspace((unsigned short)*end)) ++end;
+	if (*end != 0) return FALSE;
+	*p_int = (int)value;
+	return TRUE;
 }
 
 
@@ -135,7 +139,16 @@ BOOL INIgetStringVal(LPCTSTR value_name,TCHAR * string,int * p_ret_len,int max_l
 	result = GetPrivateProfileString(INI_SECTION,value_name,NULL,string,max_len,inipath);
 	*p_ret_len = result;
 
-	return (result !=0);
+	if (result != 0) return TRUE;
+	/* Only class lists use an explicit empty string as a value. Probe again
+	   with a nonempty default to distinguish absence without a magic sentinel
+	   collision for nonempty values. Keep legacy audio-path behavior unchanged. */
+	if (_tcscmp(value_name,_T("ignored_classes")) == 0
+		|| _tcscmp(value_name,_T("skinned_classes")) == 0){
+		TCHAR missing[2];
+		return GetPrivateProfileString(INI_SECTION,value_name,_T("\1"),missing,2,inipath) == 0;
+	}
+	return FALSE;
 }
 
 BOOL INIsetStringVal(LPCTSTR value_name,LPCTSTR szString,LPCTSTR inipath){
@@ -173,7 +186,7 @@ LPCTSTR get_ini_path()
 	}
 }
 
-BOOL	LoadSettingsFromINI (void){
+static BOOL LoadSettings(BOOL preserve_runtime){
 	int		temp = 0;
 	DWORD	dwSize=sizeof(DWORD);
 	int		reg_index = 0;
@@ -185,17 +198,23 @@ BOOL	LoadSettingsFromINI (void){
 	}
 
 	for (reg_index = 0; ini_items[reg_index].rt!=REGT_EMPTY; reg_index++){
+		LPCTSTR name = ini_items[reg_index].value_name;
+		if (preserve_runtime && (_tcscmp(name,_T("enabled")) == 0
+			|| _tcscmp(name,_T("icon_hidden")) == 0)) continue;
 		temp = 0;
 		switch(ini_items[reg_index].rt){
 
 		case REGT_BOOL:
             if (getInt(ini_items[reg_index].value_name,&temp,inipath)){
-				((PF_SET_BOOL)(ini_items[reg_index].pfv_setter))((BOOL)temp);
+				((PF_SET_BOOL)(ini_items[reg_index].pfv_setter))(temp != 0);
 			}
 			break;
 
 		case REGT_INT:
 			if (getInt(ini_items[reg_index].value_name,&temp,inipath)){
+				if ((_tcscmp(name,_T("win_tresh")) == 0 || _tcscmp(name,_T("screen_tresh")) == 0)
+					&& (temp < 2 || temp > 100)) break;
+				if (_tcscmp(name,_T("crop_top")) == 0 && temp < 0) break;
 				((PF_SET_INT)(ini_items[reg_index].pfv_setter))(temp);
 			}
 			break;
@@ -228,6 +247,9 @@ BOOL	LoadSettingsFromINI (void){
 LoadSettingsFromRegistry_END:
 	return TRUE;
 }
+
+BOOL LoadSettingsFromINI(void){ return LoadSettings(FALSE); }
+BOOL LoadSettingsForDialog(void){ return LoadSettings(TRUE); }
 
 
 BOOL SaveSettingsToINI (void){

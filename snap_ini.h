@@ -6,6 +6,8 @@
 
 
 BOOL LoadSettingsFromINI (void);
+/* Reload persisted preferences without undoing live tray enable/visibility state. */
+BOOL LoadSettingsForDialog (void);
 BOOL SaveSettingsToINI (void);
 
 #ifdef ALLSNAP_TESTING

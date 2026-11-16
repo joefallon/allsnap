@@ -105,5 +105,33 @@ namespace AllSnapTests
             SnapIni_TestSetPath(directory);
             Assert::IsFalse(SaveSettingsToINI());
         }
+
+        // ST-017: Preferences input must be a complete integer, not a numeric prefix.
+        TEST_METHOD(PreferencesRejectsTrailingCharactersInNumericInputs)
+        {
+            for (int control : {IDC_WIN_THRESH, IDC_SCREEN_THRESH, IDC_WINDOW_SPACING}) {
+                SettingsFixture fixture;
+                HWND page = fixture.Page(IDD_GENERAL, PrefsProc);
+                SetDlgItemTextW(page, control, L"12oops");
+                SettingsFixture::Notify(page, PSN_KILLACTIVE);
+                Assert::AreEqual(1, TestApp_MessageCount());
+                Assert::AreEqual<LONG_PTR>(TRUE, GetWindowLongPtrW(page, DWLP_MSGRESULT));
+            }
+        }
+
+        TEST_METHOD(PreferencesAcceptsThresholdAndSpacingEndpoints)
+        {
+            SettingsFixture fixture;
+            HWND page = fixture.Page(IDD_GENERAL, PrefsProc);
+            for (UINT threshold : {2U, 100U})
+                for (UINT spacing : {0U, 1000U}) {
+                    SetDlgItemInt(page, IDC_WIN_THRESH, threshold, FALSE);
+                    SetDlgItemInt(page, IDC_SCREEN_THRESH, threshold, FALSE);
+                    SetDlgItemInt(page, IDC_WINDOW_SPACING, spacing, FALSE);
+                    SettingsFixture::Notify(page, PSN_KILLACTIVE);
+                    Assert::AreEqual<LONG_PTR>(FALSE, GetWindowLongPtrW(page, DWLP_MSGRESULT));
+                }
+            Assert::AreEqual(0, TestApp_MessageCount());
+        }
     };
 }

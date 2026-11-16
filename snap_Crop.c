@@ -36,20 +36,16 @@ LPCRECT Crop_GetPUncroppedRect(PCROP_INFO p_crop){
 
 
 void CropTop(HWND hWnd,PCROP_INFO p_crop,LPRECT pTempRect){
-	int cropAmount = getCropTop();
-
-	/* Manual top crop is an absolute minimum, not extra padding after frame cropping. */
-	cropAmount -= pTempRect->top - p_crop->uncropped_rect.top;
-	if (isTopCroppable(hWnd)){
-		if (cropAmount > 0){
+	p_crop->cropping_top = FALSE;
+	if (isTopCroppable(hWnd) && pTempRect->bottom > pTempRect->top){
+		/* Manual crop is an absolute minimum after frame/region cropping.
+		   Keep one visible row and add in wide arithmetic before clamping. */
+		LONGLONG desired_top = (LONGLONG)p_crop->uncropped_rect.top + getCropTop();
+		LONG effective_top = (LONG)min(desired_top,(LONGLONG)pTempRect->bottom - 1);
+		if (effective_top > pTempRect->top){
+			pTempRect->top = effective_top;
 			p_crop->cropping_top = TRUE;
-			pTempRect->top += cropAmount;
 		}
-		else{
-			p_crop->cropping_top = FALSE;
-		}
-	}else{
-		p_crop->cropping_top = FALSE;
 	}
 }
 
@@ -224,13 +220,7 @@ void CropToRgn( LPCRECT pRgnBox, LPRECT pRect){
 }
 
 BOOL IsSkinnedAppClass(HWND our_hWnd){
-	TCHAR pszClassName[MAX_CLASSNAME_LENGTH] = {0};
-
-	if (!GetClassName(our_hWnd,pszClassName,MAX_CLASSNAME_LENGTH)){
-		return FALSE;
-	}
-
-	return is_name_in_classlist(pszClassName,getSkinnedClasses());	
+	return is_window_class_in_classlist(our_hWnd,getSkinnedClasses());
 	/*for (i=0;i<num_skinnedAppClasses;i++){
 		if (lstrcmp(pszClassName,skinnedClassList[i])==0){
 			return TRUE;

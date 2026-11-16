@@ -28,6 +28,8 @@ void WinRects_getScreenFromPt(POINT pt, RECT * pRect);
 void WinRects_TestSetScreens(const RECT * screens, int count, const RECT * current_screen);
 void WinRects_TestSetWindows(const RECT * windows, int count);
 void WinRects_TestRefreshScreens(const RECT * screens, int count, DWORD get_which, const RECT * window);
+void WinRects_TestRefreshWindows(DWORD get_which, HWND window, const HWND * candidates, int candidate_count,
+    const RECT * work_areas, int work_area_count);
 #endif
 
 #endif

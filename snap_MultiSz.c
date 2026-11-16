@@ -56,3 +56,11 @@ BOOL is_name_in_classlist(LPCTSTR str,LPCTSTR class_list){
   }
   return FALSE;
 }
+
+BOOL is_window_class_in_classlist(HWND window, LPCTSTR class_list){
+  /* Native window class names allow 255 characters, plus their terminator.
+     The legacy 20-character settings constant is not a class-name buffer size. */
+  TCHAR class_name[256];
+  if (!GetClassName(window,class_name,chDIMOF(class_name))) return FALSE;
+  return is_name_in_classlist(class_name,class_list);
+}

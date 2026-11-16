@@ -94,6 +94,7 @@
     <ClCompile Include="..\snap_diagnostics.c"><CompileAs>CompileAsC</CompileAs></ClCompile>
     <ClCompile Include="..\snap_grid.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
     <ClCompile Include="..\snap_ini.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+    <ClCompile Include="..\snap_taskbar.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
     <ClCompile Include="..\snap_settings.c"><CompileAs>CompileAsC</CompileAs><PreprocessorDefinitions>SNAPLIBAPI=;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
   </ItemGroup>
   <ItemGroup>

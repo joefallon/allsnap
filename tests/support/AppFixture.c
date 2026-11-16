@@ -1,6 +1,7 @@
 /* Boundary adapters for settings tests. No tray icon, sound, or desktop hook. */
 #include "stdafx.h"
 #include <commctrl.h>
+#include <shellapi.h>
 #include "snap_sounds.h"
 
 HWND g_hWnd = NULL;
@@ -9,9 +10,13 @@ BOOL g_isXP = TRUE;
 HICON g_hiPlay = NULL;
 HICON g_hiStop = NULL;
 
-static BOOL test_icon_hidden;
 static TCHAR test_sound_paths[NUM_SOUNDS][MAX_PATH];
 static int test_message_count;
+static int test_notify_count;
+static DWORD test_notify_operation[32];
+static NOTIFYICONDATA test_notify_data[32];
+static BOOL test_notify_success;
+void SnapTaskbar_TestReset(void);
 
 void InitCmnCtls(void)
 {
@@ -25,14 +30,27 @@ void TestApp_Initialize(void)
         GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
         (LPCTSTR)&TestApp_Initialize, &g_hInst);
     InitCmnCtls();
-    test_icon_hidden = FALSE;
+    SnapTaskbar_TestReset();
     test_message_count = 0;
+    test_notify_count = 0;
+    test_notify_success = TRUE;
     ZeroMemory(test_sound_paths, sizeof(test_sound_paths));
 }
 
-BOOL WINAPI isIconHidden(void) { return test_icon_hidden; }
-void WINAPI setIconHidden(BOOL hidden) { test_icon_hidden = hidden; }
-BOOL ResetTaskbarIcon(void) { return TRUE; }
+BOOL SnapTaskbar_TestNotifyIcon(DWORD operation, PNOTIFYICONDATA data)
+{
+    if (test_notify_count < 32) {
+        test_notify_operation[test_notify_count] = operation;
+        test_notify_data[test_notify_count] = *data;
+    }
+    ++test_notify_count;
+    if (!test_notify_success) SetLastError(ERROR_ACCESS_DENIED);
+    return test_notify_success;
+}
+int TestApp_NotifyCount(void) { return test_notify_count; }
+DWORD TestApp_NotifyOperation(int index) { return test_notify_operation[index]; }
+const NOTIFYICONDATA * TestApp_NotifyData(int index) { return &test_notify_data[index]; }
+void TestApp_SetNotifySuccess(BOOL success) { test_notify_success = success; }
 void tips_show(HWND control) { (void)control; }
 
 int SnapSettings_TestMessageBox(HWND owner, LPCTSTR text, LPCTSTR caption, UINT flags)

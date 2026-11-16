@@ -51,6 +51,11 @@ static BOOL g_gotScreensAlready=FALSE;
 #ifdef ALLSNAP_TESTING
 static RECT g_test_current_screen;
 static BOOL g_test_screen_override = FALSE;
+static BOOL g_test_window_source = FALSE;
+static const HWND * g_test_windows;
+static int g_test_window_count;
+static const RECT * g_test_work_areas;
+static int g_test_work_area_count;
 
 void WinRects_TestSetScreens(const RECT * screens, int count, const RECT * current_screen){
 	int index;
@@ -129,6 +134,7 @@ void AddScreen(LPCRECT p_rc);
 void InitGetWinRectsState(getwinrects_state_t * p_state,DWORD get_which,HWND my_window);
 //BOOL isPtInMonitors(POINT pt);
 BOOL IsIgnoredClass(HWND our_hWnd);
+static BOOL isIncludedDestination(HWND hWnd, HWND our_hwnd);
 BOOL isIncludedWindow(HWND hWnd, HWND our_hwnd);
 BOOL isIncludedRect(HWND hWnd, CROP_INFO * pci);
 
@@ -178,6 +184,18 @@ INLINE void AddVCenterSize(LPCRECT p_rc){
   if(g_num_vcenter_size_rects < (int)chDIMOF(g_vcenter_size_rects)){
 	  g_vcenter_size_rects[g_num_vcenter_size_rects++] = *p_rc;
   }
+}
+
+static void RefreshDisplays(LPCRECT window){
+#ifdef ALLSNAP_TESTING
+	if (g_test_window_source){
+		int index;
+		for (index = 0; index < g_test_work_area_count; ++index)
+			if (!AddMonitorWorkArea(&g_test_work_areas[index],window)) break;
+		return;
+	}
+#endif
+	EnumDisplayMonitors(NULL,NULL,(MONITORENUMPROC)EnumMonitorsProc,(LPARAM)window);
 }
 
 INLINE void AddScreen(LPCRECT p_rc){
@@ -285,7 +303,8 @@ void AddGrid(LPCRECT pcScreen){
 	gridsnap_settings_t settings;
 	getGridSnap(&settings);
 
-	if (settings.h.enabled && settings.h.val > 0){
+	if (settings.h.enabled && (settings.h.val > 0
+		|| (settings.h.type == GRIDTYPE_SINGLE && settings.h.val == 0))){
 		switch(settings.h.type){
 			case GRIDTYPE_EVEN: {
 				int line, previous = 0;
@@ -315,7 +334,8 @@ void AddGrid(LPCRECT pcScreen){
 	}
 
 
-	if (settings.v.enabled && settings.v.val > 0){
+	if (settings.v.enabled && (settings.v.val > 0
+		|| (settings.v.type == GRIDTYPE_SINGLE && settings.v.val == 0))){
 		switch(settings.v.type){
 			case GRIDTYPE_EVEN: {
 				int line, previous = 0;
@@ -418,31 +438,28 @@ BOOL CALLBACK EnumChildProc(
   )
 {
 	if (g_num_rects < MAX_RECTS && hWnd != NULL){
-		if (   (hWnd != (HWND)lParam)
-			&&  IsWindowVisible(hWnd)
-			){
-				RECT new_rect;
-				if ((hWnd != (HWND)lParam)
-					&& IS_MDI_CHILD(hWnd)
-					&& GetWindowRect(hWnd,&new_rect) != 0 ){
-					g_window_rects[g_num_rects++] = new_rect;	
-				}
-			}
+		RECT new_rect;
+		if (IS_MDI_CHILD(hWnd)
+			&& isIncludedDestination(hWnd,(HWND)lParam)
+			&& GetValidWinRect(hWnd,&new_rect))
+			g_window_rects[g_num_rects++] = new_rect;
 		return TRUE;
 	}
 	return FALSE;
 }
 
 
-BOOL isIncludedWindow(HWND hWnd, HWND our_hwnd){
+static BOOL isIncludedDestination(HWND hWnd, HWND our_hwnd){
 	   
 	return(
 			(hWnd != our_hwnd)
 			&&  IsWindowVisible(hWnd)
-			&& !IS_MDI_CHILD(hWnd)
 			&& !IsIconic(hWnd)
 			&& !IsIgnoredClass(hWnd)
 			);
+}
+BOOL isIncludedWindow(HWND hWnd, HWND our_hwnd){
+	return !IS_MDI_CHILD(hWnd) && isIncludedDestination(hWnd,our_hwnd);
 }
 BOOL isIncludedRect(HWND hWnd, CROP_INFO * pci){
 	return (
@@ -492,11 +509,7 @@ BOOL isClassNameInArray(HWND hWnd,int array_length,LPCTSTR name_array[]){
 }
 
 BOOL IsIgnoredClass(HWND our_hWnd){
-	TCHAR class_name[MAX_CLASSNAME_LENGTH] = {0};
-	if (!GetClassName(our_hWnd,class_name,MAX_CLASSNAME_LENGTH)){
-		return FALSE;
-	}
-	return is_name_in_classlist(class_name, getIgnoredClasses());
+	return is_window_class_in_classlist(our_hWnd,getIgnoredClasses());
 }
 
 BOOL WinRects_GetWindowRect(HWND hWnd, LPRECT pRect){
@@ -601,13 +614,20 @@ void RefreshAllWindows(HWND our_hWnd,LPCRECT pcRect){
 	//do the displays first since we need for overlap test
 	getwinrects_state_t getwinrect_state = {0};
 	
-	EnumDisplayMonitors(NULL,NULL,(MONITORENUMPROC)EnumMonitorsProc,(LPARAM)pcRect);
+	RefreshDisplays(pcRect);
 	
 	
 	InitGetWinRectsState(&getwinrect_state,g_get_which,our_hWnd);
     
 
 	if (	(g_get_which & SNAPT_OTHERS) != 0){
+#ifdef ALLSNAP_TESTING
+		if (g_test_window_source){
+			int index;
+			for (index = 0; index < g_test_window_count; ++index)
+				if (!EnumWindowsProc(g_test_windows[index],(LPARAM)&getwinrect_state)) break;
+		}else
+#endif
 		EnumWindows(
 			(WNDENUMPROC) EnumWindowsProc,(LPARAM)&getwinrect_state	);
 	}
@@ -637,9 +657,10 @@ void RefreshMdiWindows(HWND our_hWnd,LPCRECT pcRect)
 
 			AddCenters(&rc,pcRect);
 			AddScreen(&rc);
+			AddGrid(&rc);
 
 			if ((g_get_which & SNAPT_DESKTOP) != 0){
-				EnumDisplayMonitors(NULL,NULL,(MONITORENUMPROC)EnumMonitorsProc,(LPARAM)0);
+				RefreshDisplays(NULL);
 			}
 		}
 	}
@@ -734,6 +755,20 @@ static BOOL AddMonitorWorkArea(LPCRECT screen, LPCRECT window){
 }
 
 #ifdef ALLSNAP_TESTING
+void WinRects_TestRefreshWindows(DWORD get_which, HWND window, const HWND * candidates, int candidate_count,
+	const RECT * work_areas, int work_area_count){
+	g_test_window_source = TRUE;
+	g_test_windows = candidates;
+	g_test_window_count = candidates ? max(0,candidate_count) : 0;
+	g_test_work_areas = work_areas;
+	g_test_work_area_count = work_areas ? max(0,work_area_count) : 0;
+	WinRects_Refresh(get_which,window);
+	g_test_window_source = FALSE;
+	g_test_windows = NULL;
+	g_test_work_areas = NULL;
+	g_test_window_count = g_test_work_area_count = 0;
+}
+
 void WinRects_TestRefreshScreens(const RECT * screens, int count, DWORD get_which, const RECT * window){
 	int index;
 	WinRects_TestSetScreens(NULL, 0, (screens && count > 0) ? &screens[0] : NULL);

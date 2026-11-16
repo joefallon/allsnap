@@ -48,6 +48,12 @@ void test_2_sides_for_snap(enum SIDE my_side, enum SIDE your_side,TEST_INFO * p_
 
 void test_screens(PTEST_RECTS ptest_rects,TEST_INFO * p_test_info, SNAP_RESULTS * p_snap_results);
 
+static BOOL HasEnabledGrid(void){
+	gridsnap_settings_t grid;
+	getGridSnap(&grid);
+	return grid.h.enabled || grid.v.enabled;
+}
+
 void moving_test_all
 (
 	LPCRECT p_my_rect,
@@ -72,7 +78,7 @@ void moving_test_all
 
 	clear_snap_results(p_snap_results);
 	
-	if ((snap_type & SNAPT_ANY_SCREEN) != 0){
+	if ((snap_type & SNAPT_ANY_SCREEN) != 0 || HasEnabledGrid()){
 		test_info.threshold = screen_threshold;
 		test_info.side_threshold = 0;
 		test_screens(ptest_rects,&test_info,p_snap_results);
@@ -136,7 +142,7 @@ void sizing_test_all
 
 	
 	
-	if ((snap_type & SNAPT_ANY_SCREEN) != 0){
+	if ((snap_type & SNAPT_ANY_SCREEN) != 0 || HasEnabledGrid()){
 		test_info.threshold = screen_threshold;
 		test_info.side_threshold = 0;
 		test_screens(ptest_rects,&test_info,p_snap_results);
@@ -418,13 +424,14 @@ void test_some_rects( TEST_INFO *pti,SNAP_RESULTS * ps,RECT * some_rects,int num
 void test_screens(PTEST_RECTS ptest_rects, TEST_INFO * p_test_info, SNAP_RESULTS * p_snap_results){
 	UINT snap_type = getSnapType();
 
-	if (snap_type & SNAPT_DESKTOP){
-		test_some_rects(
-			p_test_info,
-			p_snap_results,
-			ptest_rects->screens,
-			ptest_rects->num_screens,
-			&test_screen_rect);
+	if ((snap_type & SNAPT_DESKTOP) || HasEnabledGrid()){
+		int index;
+		for (index = 0; index < ptest_rects->num_screens; ++index){
+			p_test_info->yours = &ptest_rects->screens[index];
+			/* Grid controls are independent of Desktop edge proximity. */
+			if (!(snap_type & SNAPT_DESKTOP) && WinRects_IsWorkArea(p_test_info->yours)) continue;
+			test_screen_rect(p_test_info,p_snap_results);
+		}
 	}
 
 	if ( (p_test_info->sizing) ){

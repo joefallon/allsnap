@@ -8,6 +8,16 @@
 UINT g_uTaskbarRestart;
 static BOOL g_isHidden = FALSE;
 
+#ifdef ALLSNAP_TESTING
+BOOL SnapTaskbar_TestNotifyIcon(DWORD operation, PNOTIFYICONDATA data);
+#undef Shell_NotifyIcon
+#define Shell_NotifyIcon SnapTaskbar_TestNotifyIcon
+void SnapTaskbar_TestReset(void){
+	g_isHidden = FALSE;
+	g_uTaskbarRestart = 0;
+}
+#endif
+
 BOOL WINAPI isIconHidden(void){
 	return g_isHidden;
 }

@@ -2,6 +2,7 @@
 
 #include "EngineFixture.h"
 #include <commctrl.h>
+#include <string>
 #include <vector>
 
 extern "C" {
@@ -24,6 +25,11 @@ namespace AllSnapTests
 {
     class SettingsFixture
     {
+        const int originalCropTop = getCropTop();
+        const UINT originalCenterKey = getCenterKey();
+        const UINT originalEqualKey = getEqualKey();
+        const std::wstring originalIgnored = getIgnoredClasses();
+        const std::wstring originalSkinned = getSkinnedClasses();
         HWND parent = nullptr;
         WCHAR iniPath[MAX_PATH] = {};
         std::vector<HWND> pages;
@@ -33,10 +39,36 @@ namespace AllSnapTests
             return reinterpret_cast<INT_PTR>(CreateDialogParamW(page.hInstance,
                 page.pszTemplate, sheet->hwndParent, page.pfnDlgProc, page.lParam));
         }
+        static PFNPROPSHEETCALLBACK & OriginalSheetCallback()
+        {
+            static PFNPROPSHEETCALLBACK callback = nullptr;
+            return callback;
+        }
+        static int CALLBACK HideNativeSheet(HWND sheet, UINT message, LPARAM parameter)
+        {
+            if (OriginalSheetCallback()) OriginalSheetCallback()(sheet, message, parameter);
+            if (message == PSCB_INITIALIZED) {
+                SetWindowLongPtrW(sheet, GWL_EXSTYLE, GetWindowLongPtrW(sheet, GWL_EXSTYLE) |
+                    WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW);
+                ShowWindow(sheet, SW_HIDE);
+            }
+            return 0;
+        }
+        static INT_PTR CALLBACK CreateNativeSheet(LPCPROPSHEETHEADER header)
+        {
+            PROPSHEETHEADER sheet = *header;
+            OriginalSheetCallback() = sheet.pfnCallback;
+            sheet.pfnCallback = HideNativeSheet;
+            HWND window = reinterpret_cast<HWND>(PropertySheetW(&sheet));
+            OriginalSheetCallback() = nullptr;
+            if (IsWindow(window)) ShowWindow(window, SW_HIDE);
+            return reinterpret_cast<INT_PTR>(window);
+        }
     public:
         SettingsFixture()
         {
             ResetEngine();
+            setCropTop(3);
             TestApp_Initialize();
             WCHAR temporaryDirectory[MAX_PATH] = {};
             Assert::IsTrue(GetTempPathW(MAX_PATH, temporaryDirectory) != 0);
@@ -56,6 +88,11 @@ namespace AllSnapTests
             WritePrivateProfileStringW(nullptr, nullptr, nullptr, iniPath);
             DeleteFileW(iniPath);
             ResetEngine();
+            setCropTop(originalCropTop);
+            setCenterKey(originalCenterKey);
+            setEqualKey(originalEqualKey);
+            setIgnoredClasses(const_cast<LPTSTR>(originalIgnored.c_str()), static_cast<int>(originalIgnored.size()));
+            setSkinnedClasses(const_cast<LPTSTR>(originalSkinned.c_str()), static_cast<int>(originalSkinned.size()));
         }
 
         SettingsFixture(const SettingsFixture &) = delete;
@@ -81,6 +118,43 @@ namespace AllSnapTests
             Assert::IsNotNull(page);
             pages.push_back(page);
             return page;
+        }
+
+        HWND OpenSheet()
+        {
+            SnapSettings_TestSetSheetCreator(CreateNativeSheet);
+            HWND sheet = DoPropertySheet(parent);
+            SnapSettings_TestSetSheetCreator(nullptr);
+            Assert::IsTrue(IsWindow(sheet) != FALSE, L"The actual modeless property sheet must be created.");
+            pages.push_back(sheet);
+            return sheet;
+        }
+
+        static HWND SelectPage(HWND sheet, int index)
+        {
+            Assert::IsTrue(PropSheet_SetCurSel(sheet, nullptr, index) != FALSE);
+            HWND page = PropSheet_GetCurrentPageHwnd(sheet);
+            Assert::IsNotNull(page);
+            return page;
+        }
+
+        static void Press(HWND sheet, int button)
+        {
+            PropSheet_PressButton(sheet, button);
+            MSG message;
+            for (int count = 0; count < 100 && PeekMessageW(&message, sheet, 0, 0, PM_REMOVE); ++count) {
+                if (!PropSheet_IsDialogMessage(sheet, &message)) {
+                    TranslateMessage(&message);
+                    DispatchMessageW(&message);
+                }
+            }
+        }
+
+        static void Click(HWND page, int control, bool checked = true)
+        {
+            Check(page, control, checked);
+            SendMessageW(page, WM_COMMAND, MAKEWPARAM(control, BN_CLICKED),
+                reinterpret_cast<LPARAM>(GetDlgItem(page, control)));
         }
 
         static void Notify(HWND page, UINT code)

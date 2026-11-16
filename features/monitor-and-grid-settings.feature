@@ -30,12 +30,43 @@ Feature: Monitor work areas and optional grid guides
     Then invalid guides are disabled safely
     And the window remains constrained to the real work areas
 
+  Scenario MG05: Grid enablement is independent of Desktop edge proximity
+    Given an enabled horizontal or vertical single grid guide at offset 500
+    And Desktop edge proximity and center snapping are disabled
+    When a moving or dragged resize edge approaches the guide within threshold
+    Then that edge snaps to the guide while preserving the appropriate size or fixed edge
+
+  Scenario MG06: A single guide at zero is a valid boundary alignment target
+    Given an enabled horizontal or vertical single grid guide at offset zero
+    And Desktop edge proximity is enabled with 8 pixels of spacing
+    And the activation threshold is 2 pixels
+    When the matching window edge is at offset 1
+    Then it snaps to the unpadded guide at zero for both moving and resizing
+    And the padded work-area edge at offset 8 cannot explain that match
+    And the same guide remains active when Desktop edge proximity is disabled
+
+  Scenario MG07: Independent grids do not enable Desktop edges
+    Given an interior grid guide is enabled and Desktop edge proximity is disabled
+    When a moving or dragged resize edge approaches an ordinary work-area boundary
+    And that edge is outside the guide's threshold
+    Then the proposed geometry remains unchanged
+
+  Scenario MG08: MDI grids are relative to the MDI client work area
+    Given a native MDI child and an enabled horizontal or vertical single guide at offset 500
+    And Desktop edge proximity and center snapping are disabled
+    When the child moves or resizes within the guide's threshold
+    Then its visible edge snaps 500 pixels from its MDI client's top or left edge
+    And moving preserves size while resizing preserves the opposite edge
+    Native acceptance tests call the actual gesture entry, movement, and sizing pipeline
+    with only owned offscreen windows and a controlled released-key reader
+
   Capacity and validation examples for unit coverage:
     At most 10 real work areas and 100 generated guide candidates are stored.
     Dense grids reserve storage for later real work areas.
     Center-guide arrays are bounded by their actual storage capacity.
     Negative values and overflowing even-grid counts are disabled.
-    Zero retains the existing no-guides behavior.
+    EVEN zero requests no guides; PIXELS zero produces no guides and never divides by zero.
+    SINGLE zero places one guide at the work area's top or left boundary.
     Valid integer spacing such as 25 pixels remains unchanged.
     Single guides beyond a work area are skipped before coordinate addition.
     Evenly spaced guides distribute integer rounding across the full dimension:

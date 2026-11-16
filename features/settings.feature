@@ -3,7 +3,9 @@ Settings behavior reference
 These are documentation scenarios for Microsoft native acceptance tests. Tests use
 the actual settings resources/controllers and production INI code with hidden,
 test-owned dialogs and temporary INI files. Audio and tray APIs are boundary
-adapters, so these tests do not establish actual audio or tray behavior.
+adapters, so these tests do not establish actual audio playback or system tray
+behavior. ST-010 onward also create the actual native modeless PropertySheet;
+its owned windows are hidden, and no global hooks or user INI files are used.
 
 ST-001 — Initialize Preferences
 Given configured thresholds, snap destinations, and a selected toggle key,
@@ -62,3 +64,63 @@ enabled state. Canceling pending checkbox edits changes neither that runtime sta
 nor the saved INI value. Both enabled and disabled runtime states are covered.
 Only property-sheet creation is replaced with a hidden actual Preferences page;
 the production opening path, resource, controller, and INI reload are exercised.
+
+ST-010 — Native Apply followed by Cancel
+Editing Preferences enables the native Apply button. Apply updates the engine and
+temporary INI, clears dirty state, and keeps Settings open. Cancel discards edits
+made after that successful Apply.
+
+ST-011 — Native OK across pages
+Edits on Preferences, Grid, and Advanced are applied by native OK notifications.
+The modeless sheet reports closure, and edited values reload from its temporary INI.
+
+ST-012 — Native Cancel across pages
+Cancel discards unapplied edits on all visited non-sound pages without changing
+engine values or the saved settings.
+
+ST-013 — Native Preferences validation and spinner endpoints
+Invalid Preferences numbers prevent tab switching and OK. Correcting them permits
+navigation. Both threshold spinners support the same inclusive 2..100 range as
+manual threshold input. Spacing supports 0..1000 pixels.
+
+ST-014 — Selected grid input validation
+Each enabled grid axis requires a whole number in its selected mode: EVEN accepts
+0..100 lines, PIXELS accepts 1..2147483647 pixels, and SINGLE accepts an offset of
+0..2147483647 pixels. Empty, malformed, negative, and overflowing input is rejected.
+Native tab changes and Apply retain invalid edits for correction without changing
+the corresponding engine or saved grid settings.
+
+ST-015 — Disable and retain a grid axis
+Disabling horizontal or vertical grid snapping retains that axis's mode and value
+for future re-enabling. Applying the disabled state preserves those settings.
+
+ST-016 — Advanced top-crop input
+Enabled top cropping requires a whole number from 0 to 2147483647. Invalid input
+blocks native navigation and Apply without changing the crop setting. Zero turns
+manual top cropping off. The crop checkbox enables/disables its edit control.
+
+ST-017 — Complete Preferences numbers
+Preferences rejects trailing nonnumeric characters and accepts both threshold and
+spacing endpoints. These tests exercise actual native edit controls and validation.
+
+ST-018 — Native save failure and retry
+When the INI destination is unwritable, native Apply and OK report the failure and
+keep Settings open. Correcting the destination permits retry, persistence, and
+normal dirty-state clearing or closure.
+
+ST-019 — All Preferences selections
+Every destination checkbox and enabled state can be applied on and off. All four
+toggle-key selections signal a change and apply through the actual native sheet.
+
+ST-020 — All Advanced selections
+Every live Advanced checkbox applies and restores its direct or inverted engine
+value. The unfinished desktop-icon alignment option remains hidden.
+
+ST-021 — Grid axis controls
+Horizontal and vertical checkboxes enable and disable only their own radio buttons
+and edit controls.
+
+ST-022 — All grid modes and valid endpoints
+Both axes support all three modes and their valid endpoints through native Apply.
+Unselected edits do not invalidate the selected mode. System Shell notifications
+remain intercepted; these scenarios establish controller/persistence behavior.
