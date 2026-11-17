@@ -131,3 +131,22 @@ in that order. Each tab opens the corresponding retained controls. The retired
 Sounds dialog resource (169) is absent from the application resource image.
 Existing native Apply, OK, Cancel, validation, save-failure/retry, and persistence
 scenarios run against the three-page sheet without audio fixture adapters.
+
+ST-024 — Help is isolated from Settings notifications
+On every Settings page, a help message is acknowledged and forwards its supplied
+control to context help exactly once. It must not apply pending edits, save the
+INI, or run page validation as if the help payload were a notification header.
+
+ST-025 — Context-menu ownership
+Each Settings help-menu invocation releases the loaded parent menu, including
+its submenu, after selection or cancellation. A failed load or missing submenu
+does not enter menu tracking; any parent already loaded is released.
+
+ST-026 — Property-sheet callback contracts
+The callback follows the Windows int-returning callback signature and returns
+zero. Precreation centers both standard and extended dialog templates by changing
+only their style field; extended version/signature and other fields remain intact.
+
+ST-027 — Deterministic native descriptors
+Property-sheet/page descriptors initialize unused fields to zero before assigning
+their enabled flags, resource IDs, titles, callbacks, and owner information.

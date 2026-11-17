@@ -2,6 +2,7 @@
 #include <windowsx.h>
 #include <tchar.h>
 #include <limits.h>
+#include <stddef.h>
 
 
 #include <Prsht.h>
@@ -27,10 +28,36 @@ int SnapSettings_TestMessageBox(HWND hwnd, LPCTSTR text, LPCTSTR title, UINT typ
 #define MessageBox SnapSettings_TestMessageBox
 
 static INT_PTR (CALLBACK *test_create_property_sheet)(LPCPROPSHEETHEADER);
+static HMENU (WINAPI *test_load_context_menu)(HINSTANCE,LPCTSTR);
+static BOOL (WINAPI *test_track_context_menu)(HMENU,UINT,int,int,int,HWND,const RECT *);
 void SnapSettings_TestSetSheetCreator(INT_PTR (CALLBACK *creator)(LPCPROPSHEETHEADER)){
 	test_create_property_sheet=creator;
 }
+void SnapSettings_TestSetContextMenuOperations(
+	HMENU (WINAPI *loader)(HINSTANCE,LPCTSTR),
+	BOOL (WINAPI *tracker)(HMENU,UINT,int,int,int,HWND,const RECT *)){
+	test_load_context_menu = loader;
+	test_track_context_menu = tracker;
+}
 #endif
+
+static HMENU LoadSettingsContextMenu(void){
+#ifdef ALLSNAP_TESTING
+	if (test_load_context_menu)
+		return test_load_context_menu(g_hInst,MAKEINTRESOURCE(IDR_WHAT));
+#endif
+	return LoadMenu(g_hInst,MAKEINTRESOURCE(IDR_WHAT));
+}
+
+static BOOL TrackSettingsContextMenu(HMENU menu,HWND owner,UINT x,UINT y){
+#ifdef ALLSNAP_TESTING
+	if (test_track_context_menu)
+		return test_track_context_menu(menu,
+			TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD,x,y,0,owner,NULL);
+#endif
+	return TrackPopupMenu(menu,
+		TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD,x,y,0,owner,NULL);
+}
 
 static BOOL SaveAppliedSettings(HWND page){
 	if (SaveSettingsToINI()){
@@ -100,7 +127,7 @@ static UINT	thresh_boxes[] = {IDC_WIN_THRESH,IDC_SCREEN_THRESH,0};
 /*====================================================================
  Local Function Prototypes
 =====================================================================*/
-void	CALLBACK PropSheetCallback(HWND hwndPropSheet, UINT uMsg, LPARAM lParam);
+int	CALLBACK PropSheetCallback(HWND hwndPropSheet, UINT uMsg, LPARAM lParam);
 
 INT_PTR CALLBACK PrefsProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK AdvProc(HWND,UINT,WPARAM,LPARAM);
@@ -162,8 +189,8 @@ static void InitPropertyPage(PROPSHEETPAGE * page, UINT template_id,
 //     g_hInst - instance handle
 HWND DoPropertySheet(HWND hwndOwner)
 {
-    PROPSHEETPAGE psp[3];
-    PROPSHEETHEADER psh;
+    PROPSHEETPAGE psp[3] = {0};
+    PROPSHEETHEADER psh = {0};
 
 	InitCmnCtls();
 	LoadSettingsForDialog();
@@ -181,7 +208,7 @@ HWND DoPropertySheet(HWND hwndOwner)
     psh.nPages = sizeof(psp) / sizeof(PROPSHEETPAGE);
     psh.nStartPage = 0;
     psh.ppsp = (LPCPROPSHEETPAGE) &psp;
-    psh.pfnCallback = (PFNPROPSHEETCALLBACK)PropSheetCallback;
+    psh.pfnCallback = PropSheetCallback;
 
 #ifdef ALLSNAP_TESTING
 	if (test_create_property_sheet)
@@ -192,40 +219,65 @@ HWND DoPropertySheet(HWND hwndOwner)
  
 BOOL	OnContextMenu(HWND hWnd, HWND hwndCtl, UINT x, UINT y){
 	DWORD  context_id;
+	HMENU menu;
 	HMENU hContextMenu;
+	BOOL selected;
 
 	if (hwndCtl == NULL) return FALSE;
 	context_id = GetWindowContextHelpId(hwndCtl);
 	if (context_id == 0) return FALSE;
 
-	hContextMenu = GetSubMenu(LoadMenu(g_hInst,MAKEINTRESOURCE(IDR_WHAT)),0);
-	if (TrackPopupMenu(hContextMenu,
-		TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD,
-		x,y,0,hWnd,NULL)){
+	menu = LoadSettingsContextMenu();
+	if (menu == NULL) return FALSE;
+	hContextMenu = GetSubMenu(menu,0);
+	if (hContextMenu == NULL){
+		DestroyMenu(menu);
+		return FALSE;
+	}
+	selected = TrackSettingsContextMenu(hContextMenu,hWnd,x,y);
+	DestroyMenu(menu);
+	if (selected){
 		tips_show(hwndCtl);
 	}
 	return TRUE;
 }
 
-void CALLBACK PropSheetCallback(HWND hwndPropSheet, UINT uMsg, LPARAM lParam)
+struct ExtendedDialogTemplateHeader {
+	WORD version, signature;
+	DWORD help_id, extended_style, style;
+};
+
+static void CenterPropertySheetTemplate(void * dialog_template){
+	BYTE * bytes = dialog_template;
+	WORD header[2];
+	DWORD style;
+	size_t style_offset;
+
+	/* PRECREATE accepts both native formats; the extended style follows help/exstyle. */
+	memcpy(header,bytes,sizeof(header));
+	style_offset = header[1] == 0xffff
+		? offsetof(struct ExtendedDialogTemplateHeader,style)
+		: offsetof(DLGTEMPLATE,style);
+	/* Do not assume alignment of the mutable dialog-template buffer. */
+	memcpy(&style,bytes + style_offset,sizeof(style));
+	if (!(style & DS_CENTER)){
+		style |= DS_CENTER;
+		memcpy(bytes + style_offset,&style,sizeof(style));
+	}
+}
+
+int CALLBACK PropSheetCallback(HWND hwndPropSheet, UINT uMsg, LPARAM lParam)
 {
 	switch(uMsg){
 		//called before the dialog is created, hwndPropSheet = NULL, lParam points to dialog resource
 		case PSCB_PRECREATE:
-			{
-				LPDLGTEMPLATE  lpTemplate = (LPDLGTEMPLATE)lParam;
-
-				if(!(lpTemplate->style & DS_CENTER)){
-					lpTemplate->style |= DS_CENTER;
-				}
-			}
+			CenterPropertySheetTemplate((void *)lParam);
 			break;
 		case PSCB_INITIALIZED:
 			SetClassLongPtr(hwndPropSheet,GCLP_HICON,(LONG_PTR)LoadIcon(g_hInst,MAKEINTRESOURCE(IDI_SNAPIT)));
 			break;
-
-
 	}
+	return 0;
 }
 
 // Mesage handler for Preferences Page.
@@ -242,7 +294,7 @@ INT_PTR CALLBACK PrefsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
 		case WM_HELP:
 			tips_show(((LPHELPINFO)lParam)->hItemHandle);
-		
+			return TRUE;
 		case WM_NOTIFY:
 			lpnmhdr = (NMHDR FAR *)lParam;
 
@@ -282,7 +334,7 @@ INT_PTR CALLBACK AdvProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					
 		case WM_HELP:
 			tips_show(((LPHELPINFO)lParam)->hItemHandle);
-			break;
+			return TRUE;
 		case WM_NOTIFY:
 			lpnmhdr = (NMHDR FAR *)lParam;
 
@@ -325,7 +377,7 @@ INT_PTR CALLBACK GridProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					
 		case WM_HELP:
 			tips_show(((LPHELPINFO)lParam)->hItemHandle);
-			break;
+			return TRUE;
 		case WM_NOTIFY:
 			lpnmhdr = (NMHDR FAR *)lParam;
 

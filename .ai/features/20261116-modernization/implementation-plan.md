@@ -1,6 +1,6 @@
 # allSnap modernization implementation plan
 
-Status: Phase 14 completes the surveyed low-risk Clean Code inventory, continuing from the uncommitted Phase 13 parser change. Supervisor and independent cross-review are complete; all eight solution builds pass. No tests were executed under the standing instruction; last results remain Phase 7 (286/286 in Debug/Release on Win32/x64). Remaining candidates involve behavior repairs, larger design choices, or stylistic churn. Verification and boundaries are recorded under Phase 14 below. Keep this living document and `.ai/current-state.md` aligned with actual progress; requirements are in `project-spec.md`.
+Status: Phase 15 completes deferred Settings/native tray repairs after the user committed Phase 14 and explicitly authorized regression tests and execution. All 305 tests pass in Debug/Release on Win32/x64 (97 unit, 208 acceptance); all eight solution builds and independent cross-review pass. New regressions demonstrated failures before repairs. Manual Explorer/help rendering, keyboard, hardware/DPI, and long-duration checks remain pending. Keep this living document and `.ai/current-state.md` aligned with actual progress; requirements are in `project-spec.md`.
 
 ## Current position
 
@@ -15,14 +15,15 @@ Status: Phase 14 completes the surveyed low-risk Clean Code inventory, continuin
 - Completed in Phase 12: INI load dispatch and traversal have separate responsibilities; unused load bookkeeping and the registry-named goto removed, with existing behavior preserved by review.
 - Completed in Phase 13: INI numeric parsing extracted from profile reading without changing grammar, bounds, errno behavior, or output assignment.
 - Completed in Phase 14: audited low-risk app/engine cleanup inventory, independently cross-reviewed; remaining behavior-sensitive and larger refactoring work deferred explicitly.
-- Native unit/acceptance tests now cover 286 methods (97 unit, 189 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
+- Completed in Phase 15: deferred Settings help/menu/native callback and tray packet/resource/failure repairs with 19 new acceptance regressions and executed full test matrix.
+- Native unit/acceptance tests now cover 305 methods (97 unit, 208 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
 - User handles all commits. Agents do not stage, commit, reset, or amend. Phase boundaries below are review checkpoints, not claims of commits already created.
 
 ## Milestones and human commit checkpoints
 
 | Phase | Reviewable scope | Current verification |
 | --- | --- | --- |
-| 1. Test foundation | Microsoft framework, runner, documentation, production-C fixture seams, initial confinement/snapping contracts | Implemented. Current suite: 286/286 in all four architecture/configuration runs. Later contract review corrected inherited assumptions rather than freezing legacy outputs. |
+| 1. Test foundation | Microsoft framework, runner, documentation, production-C fixture seams, initial confinement/snapping contracts | Implemented. Current suite: 305/305 in all four architecture/configuration runs. Later contract review corrected inherited assumptions rather than freezing legacy outputs. |
 | 2. Lifecycle reliability | Hook/subclass ownership and failures, safe shutdown bookkeeping, diagnostics | Initial failure-handling checkpoint passed 23 focused tests. Phase 5 supersedes scalar accounting and simulated ownership with a process-aware registry and actual child-process coverage. |
 | 3. Monitor/grid and Settings repairs | Workarea/guide separation, validation, Old position, Settings persistence and failure reporting, held-key semantics | Implemented. Geometry, Old position, input, validation reentrancy, Apply acknowledgement/retry, and opening-state regressions demonstrated red before repair; final suite green on both architectures. Remaining Settings paths require desktop validation. |
 | 4. Visible frames, spacing, and desktop geometry | DWM/region/manual crop composition, collapsed spacing UI/INI, ordinary/HiDPI coordinates, monitor union confinement | Implemented. Independent GDI coverage oracle plus native framed ordinary/Ctrl resize cases are green in the final matrix. Real mixed-DPI transitions and home-monitor checks remain pending. |
@@ -36,7 +37,8 @@ Status: Phase 14 completes the surveyed low-risk Clean Code inventory, continuin
 | 12. Clean Code: INI load path | Separate per-setting loading from ordered traversal in the same production file | Complete and independently reviewed; all eight builds and whitespace checks pass. Existing tests inspected, not executed; runtime regression verification remains outstanding. |
 | 13. Clean Code: INI numeric parsing | Separate text conversion from the existing profile read/length guard | Complete and independently reviewed; all eight builds and whitespace checks pass. Existing tests inspected, not executed. |
 | 14. Clean Code: remaining low-risk inventory | Unused private state/declarations/locals, obsolete commented code, equivalent guards/returns, shared page setup | Complete and cross-reviewed; all eight builds and whitespace checks pass. Tests not executed. |
-| Later backlog phases | Deeper Clean Code refactoring and behavior repairs | Surveyed easy cleanup complete; remaining candidates require separate design/behavior decisions and regression verification. |
+| 15. Deferred Settings repairs | Help dispatch, menu ownership, property-sheet native contracts, tray packets/resources/failure cleanup | Complete and cross-reviewed. New regression failures reproduced before repair; 305/305 in all four Debug/Release architecture runs and all eight builds pass. |
+| Later backlog phases | Deeper Clean Code refactoring and remaining behavior repairs | Settings/tray findings addressed in Phase 15; other deferred candidates remain separate. |
 ## Execution sequence
 
 ### 1. Establish the test foundation and protect confinement
@@ -185,7 +187,7 @@ Remaining verification and design work:
 - Check representative applications at 100% and on the current HiDPI display, then mixed-DPI monitor transitions and the older home monitor. UI compatibility scaling is approved; fractional caller coordinates can round physical spacing to a representable value.
 - Phases 6/7 exercise the retained native property-sheet controls, owned MDI/class filtering, and the real tray controller through a substituted Shell boundary. Still validate actual Explorer delivery, host menu dispatch, context help and keyboard navigation. Disabled aspect-ratio/auto-lineup features remain disabled; app audio has been removed.
 - Preserve explicit impossible-fit limits: oversized movement uses an accessible-origin fallback; ordinary resizing does not translate an outside fixed edge; centered resizing cannot always fit if its original center is outside the desktop.
-- The user authorized continuing through all low-hanging refactoring work after Phase 13; Phase 14 retains those uncommitted changes. Further/deeper work remains in B-007 and the deferred audit list. The user owns commits.
+- The user committed Phase 14, then authorized deferred Settings repairs and regression test execution in Phase 15. Other/deeper work remains in B-007 and the deferred audit list. The user owns commits.
 
 ## Phase 8 execution: repository README
 
@@ -264,3 +266,35 @@ These are source-review candidates, not reproduced failures or diagnoses of the 
 - Typed INI dispatch, unused externally visible engine functions, registry/auto-lineup retirement, geometry/arithmetic deduplication, and lifecycle/shared-state redesign. These exceed the low-risk cleanup scope.
 
 Keep these separate from the completed behavior-preserving pass. Actual desktop/Explorer, monitor/DPI, and long-running verification remain pending under B-001/B-002.
+
+## Phase 15 execution: deferred Settings/native tray repairs
+
+The user committed the cleanup before authorizing behavior repairs, new regressions, and test execution. Scope is `src/app/snap_settings.c`, `src/app/snap_taskbar.c`, controlled test-boundary adapters, feature documentation, and native acceptance tests. Geometry, hook ownership, INI semantics, Settings selections, and desired hide/unhide preference are unchanged.
+
+### Repairs and contracts
+
+- ST-024: every page acknowledges WM_HELP immediately and forwards the supplied real child control once. Preferences no longer falls through into notification processing. Tests check pending threshold/crop/grid edits, INI contents, and page result are unchanged.
+- ST-025: Settings help menus retain the loaded parent and destroy it (and its submenu) after selection/cancel or missing-submenu failure. Load failure avoids tracking. Tests use real menu handles while replacing interactive popup tracking.
+- ST-026/027: use the exact int CALLBACK signature without a function-pointer cast; return zero. Read the native template signature and update only its style at standard offset 0 or extended offset 12 using memcpy. Initialize page/header structures. Tests compare native headers, create actual hidden standard/extended dialogs, and inspect optional descriptor fields.
+- TR-005–007: initialize Shell packets, load tooltip directly into its TCHAR capacity, reject missing tooltip/icon resources before modification, release owned images after modification, preserve the original failure over cleanup, and attempt deletion if initial add succeeded but refresh failed. Desired visibility preference remains retryable. Cleanup cannot guarantee removal when the Shell also rejects deletion.
+
+New cases are in `tests/acceptance/settings_native_contract_acceptance.cpp` (11) and `tray_native_contract_acceptance.cpp` (8), using the existing Microsoft framework. Small test-only seams control popup interaction/resource failures; shared AppFixture captures help forwarding and per-operation Shell failures. Existing resource-backed native/functional tests remain intact. Test descriptor SDK target/layout matches production C (`stdafx.h` before native headers); an initial test-layout mismatch was corrected before accepting Settings red results. No stack-poison seam or assertions about structure padding were introduced.
+
+### Executed evidence
+
+Existing compiled baseline: 286/286 Debug tests passed on each architecture before new tests were built. Pre-repair combined x64 regression run passed 2/19; eight tray cases included seven failures and one retained hide-state success. The corrected-layout Settings-only red run passed 1/11: three unacknowledged help requests, two menu leaks, two menu failure paths, invalid callback return, corrupted extended template header, and uninitialized optional fields failed; the no-help guard passed. Inactive-field initialization is an additive deterministic-input contract, not proof of a previously observed UI symptom. The stronger help state assertions were added before green verification.
+
+After repairs, focused runs passed 19/19 on Win32/x64. Full results:
+
+| Platform | Debug | Release | Suite composition |
+| --- | --- | --- | --- |
+| Win32 | 305/305 | 305/305 | 97 unit, 208 acceptance |
+| x64 | 305/305 | 305/305 | 97 unit, 208 acceptance |
+
+All eight solution builds passed: Debug, Release, Debug UNICODE, Release UNICODE on both architectures. Build logs are under ignored `build/settings-repairs-verification/`; baseline/red/focused/final TRX and logs are under `build/test-results/<platform>/<configuration>/settings-repairs-*`. The full runs also verify the retained Phase 11–14 refactors and 12 isolated-process cases. Independent app/tray cross-review and supervisor inspection found no required corrections; `git diff --check` passed. No Git staging/commits, global hook installation, actual tray changes, unrelated-window changes, or user INI changes occurred.
+
+Native contract references: [WM_HELP](https://learn.microsoft.com/en-us/windows/win32/shell/wm-help), [property-sheet callback and template formats](https://learn.microsoft.com/en-us/windows/win32/api/prsht/nc-prsht-pfnpropsheetcallback), [menu ownership](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-destroymenu), and [notification fields](https://learn.microsoft.com/en-us/windows/win32/api/shellapi/ns-shellapi-notifyicondataw). These define the expected behavior rather than preserving legacy outputs.
+
+### Remaining limits
+
+Tests suppress interactive popup/help rendering and substitute Explorer/resource-failure delivery. Actual Explorer/host-menu integration, help rendering, keyboard navigation, display hardware/mixed DPI and a long-running trial remain pending. Host/debug menu ownership, debug clipboard/file-dialog capacities, multi-string bounds, debug macros, typed dispatch, and larger architecture work remain outside this Settings increment. These repairs do not establish the cause of intermittent stops; rollback after Shell rejection remains best-effort.

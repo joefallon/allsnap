@@ -41,6 +41,14 @@ collector with controlled work areas. Settings fixtures restore crop/key/class
 state and use temporary INI files. Context-help rendering, keyboard navigation,
 and actual Explorer delivery remain outside these automated checks.
 
+Native-contract regressions exercise Settings help dispatch, actual menu handle
+ownership, property-sheet descriptor initialization, and standard/extended dialog
+templates (including native dialog creation). They replace interactive popup
+tracking and context-help rendering so no menu/help UI appears on the user's
+desktop. Tray contract cases additionally inject resource loading/destruction and
+per-operation Shell failures to verify bounded tooltips, cleanup, and retry/error
+handling. Test descriptors use the same SDK target layout as production C.
+
 Sound-removal regressions verify the three-page native sheet and retired resource/
 API absence, retained snap geometry history, repeated lifecycle cleanup, and old
 audio INI keys being ignored without losing current preferences. No audio worker,

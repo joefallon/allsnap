@@ -10,11 +10,28 @@ static BOOL g_isHidden = FALSE;
 
 #ifdef ALLSNAP_TESTING
 BOOL SnapTaskbar_TestNotifyIcon(DWORD operation, PNOTIFYICONDATA data);
+static int (WINAPI * tray_load_string)(HINSTANCE,UINT,LPTSTR,int) = LoadString;
+static HANDLE (WINAPI * tray_load_image)(HINSTANCE,LPCTSTR,UINT,int,int,UINT) = LoadImage;
+static BOOL (WINAPI * tray_destroy_icon)(HICON) = DestroyIcon;
+void SnapTaskbar_TestSetResourceOps(
+	int (WINAPI * load_string)(HINSTANCE,UINT,LPTSTR,int),
+	HANDLE (WINAPI * load_image)(HINSTANCE,LPCTSTR,UINT,int,int,UINT),
+	BOOL (WINAPI * destroy_icon)(HICON)){
+	tray_load_string = load_string ? load_string : LoadString;
+	tray_load_image = load_image ? load_image : LoadImage;
+	tray_destroy_icon = destroy_icon ? destroy_icon : DestroyIcon;
+}
 #undef Shell_NotifyIcon
 #define Shell_NotifyIcon SnapTaskbar_TestNotifyIcon
+#undef LoadString
+#define LoadString tray_load_string
+#undef LoadImage
+#define LoadImage tray_load_image
+#define DestroyIcon tray_destroy_icon
 void SnapTaskbar_TestReset(void){
 	g_isHidden = FALSE;
 	g_uTaskbarRestart = 0;
+	SnapTaskbar_TestSetResourceOps(NULL,NULL,NULL);
 }
 #endif
 
@@ -44,21 +61,27 @@ VOID RegisterTaskbarCreatedMsg(void){
 }
 
 BOOL AddTaskbarIcon(void){
-	BOOL fOK;
+	DWORD error;
 
 	if(g_isHidden){
 		return FALSE;
 	}
 	
-	fOK = AddEmptyTaskbarIcon();
-	if (fOK){
-		fOK = ResetTaskbarIcon();
+	if (!AddEmptyTaskbarIcon()){
+		return FALSE;
 	}
-	return fOK;
+	if (ResetTaskbarIcon()){
+		return TRUE;
+	}
+	/* Do not leave the initial, empty icon behind when its first refresh fails. */
+	error = GetLastError();
+	DeleteTaskbarIcon();
+	SetLastError(error);
+	return FALSE;
 }
 
 BOOL AddEmptyTaskbarIcon(void){ 
-    NOTIFYICONDATA tnid; 
+    NOTIFYICONDATA tnid = {0};
  
     tnid.cbSize = sizeof(NOTIFYICONDATA); 
     tnid.hWnd = g_hWnd; 
@@ -71,7 +94,7 @@ BOOL AddEmptyTaskbarIcon(void){
 
 BOOL DeleteTaskbarIcon(void) 
 { 
-    NOTIFYICONDATA tnid; 
+    NOTIFYICONDATA tnid = {0};
 
 	if (g_isHidden){
 		return FALSE;
@@ -87,9 +110,9 @@ BOOL DeleteTaskbarIcon(void)
 BOOL ResetTaskbarIcon(void)
 { 
     BOOL res; 
-    NOTIFYICONDATA tnid;
+	DWORD error;
+    NOTIFYICONDATA tnid = {0};
 	HICON hIcon;
-	TCHAR szTrayTip[MAX_LOADSTRING];
 	UINT icon_id;
 	UINT tip_id;
 
@@ -112,20 +135,25 @@ BOOL ResetTaskbarIcon(void)
 		icon_id	= (g_isXP)?IDI_XPDISABLED:IDI_DISABLED;
 	}
 
-	LoadString(g_hInst, tip_id, szTrayTip, MAX_LOADSTRING);
+	if (!LoadString(g_hInst, tip_id, tnid.szTip, chDIMOF(tnid.szTip))){
+		return FALSE;
+	}
  	hIcon=LoadImage(g_hInst,MAKEINTRESOURCE(icon_id),IMAGE_ICON,16,16,LR_DEFAULTCOLOR);
+	if (!hIcon){
+		return FALSE;
+	}
 	
     tnid.cbSize = sizeof(NOTIFYICONDATA); 
     tnid.hWnd = g_hWnd; 
     tnid.uID = IDT_MYTRAY; 
     tnid.uFlags = NIF_ICON | NIF_TIP; 
     tnid.hIcon = hIcon; 
-    lstrcpyn(tnid.szTip, szTrayTip, sizeof(tnid.szTip));
  
     res = Shell_NotifyIcon(NIM_MODIFY , &tnid); 
  
-    if (hIcon) 
-        DestroyIcon(hIcon); 
+	if (!res) error = GetLastError();
+    DestroyIcon(hIcon);
+	if (!res) SetLastError(error);
  
     return res; 
 } 
