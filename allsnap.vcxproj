@@ -87,6 +87,7 @@
     <ClCompile Include="src\app\snap_tips.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\app\allsnap_version.h" />
     <ClInclude Include="src\common\CmnHdr.h" />
     <ClInclude Include="src\common\MYDEBUG.H" />
     <ClInclude Include="resources\resource.h" />

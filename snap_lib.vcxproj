@@ -91,6 +91,7 @@
     <ClCompile Include="src\engine\snap_WinRects.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\app\allsnap_version.h" />
     <ClInclude Include="src\common\MYDEBUG.H" />
     <ClInclude Include="resources\resource2.h" />
     <ClInclude Include="src\common\SIDES.H" />

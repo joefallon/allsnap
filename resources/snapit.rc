@@ -1,6 +1,7 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
+#include "../src/app/allsnap_version.h"
 
 // Generated Help ID header file
 #define APSTUDIO_HIDDEN_SYMBOLS
@@ -39,6 +40,7 @@ BEGIN
     "#include ""windows.h""\r\n"
     "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
     "#include ""resource.h""\r\n"
+    "#include ""../src/app/allsnap_version.h""\r\n"
     "\0"
 END
 
@@ -77,7 +79,7 @@ CAPTION "About allSnap"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,184,8,50,14
-    LTEXT           "allSnap Version 1.5.0 Beta\nIvan Heckman\nCopyright (C) 2002 - 2010",IDC_STATIC,47,8,133,27
+    LTEXT           ALLSNAP_ABOUT_TEXT,IDC_STATIC,47,8,133,27
     ICON            IDI_SNAPIT,IDC_STATIC,12,8,20,20
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKRECT | SS_SUNKEN,12,72,222,1
     LTEXT           "e-mail:",IDC_STATIC,47,50,21,9
@@ -149,7 +151,7 @@ CAPTION "About allSnap"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,184,8,50,14
-    LTEXT           "allSnap Version 1.5.0 Beta\nIvan Heckman\nCopyright (C) 2002-2010",IDC_STATIC,47,8,118,27
+    LTEXT           ALLSNAP_ABOUT_TEXT,IDC_STATIC,47,8,118,27
     ICON            IDI_SNAPIT,IDC_STATIC,12,8,20,20
     LTEXT           " ",IDC_STATIC,47,79,100,20
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKRECT | SS_SUNKEN,12,72,222,1
@@ -283,13 +285,13 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,4,2,0
- PRODUCTVERSION 1,4,2,0
+ FILEVERSION ALLSNAP_VERSION_RESOURCE
+ PRODUCTVERSION ALLSNAP_VERSION_RESOURCE
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
- FILEFLAGS 0x21L
+ FILEFLAGS 0x1L
 #else
- FILEFLAGS 0x20L
+ FILEFLAGS 0x0L
 #endif
  FILEOS 0x40004L
  FILETYPE 0x1L
@@ -302,13 +304,16 @@ BEGIN
             VALUE "Comments", "check http://allsnap.org for updates"
             VALUE "CompanyName", "Ivan Heckman"
             VALUE "FileDescription", "allSnap: makes all windows snap together"
-            VALUE "FileVersion", "1, 5, 0, 0"
+            VALUE "FileVersion", ALLSNAP_VERSION_TEXT
             VALUE "InternalName", "allSnap"
             VALUE "LegalCopyright", "Copyright © 2002-2008"
-            VALUE "OriginalFilename", "allSnap.exe"
+#ifdef _WIN64
+            VALUE "OriginalFilename", "allsnap64.exe"
+#else
+            VALUE "OriginalFilename", "allsnap.exe"
+#endif
             VALUE "ProductName", "allSnap"
-            VALUE "ProductVersion", "1, 5, 0, 0"
-            VALUE "SpecialBuild", "[ini version]"
+            VALUE "ProductVersion", ALLSNAP_VERSION_TEXT
         END
     END
     BLOCK "VarFileInfo"
@@ -367,16 +372,16 @@ IDI_XPENABLED           ICON                    "ico00007.ico"
 IDI_ICON2               ICON                    "ico00006.ico"
 #if defined(APSTUDIO_INVOKED) || defined(_WIN64)
 #if defined(APSTUDIO_INVOKED)
-IDI_SNAPIT$(_WIN64)     ICON                    "ico00008.ico"
+IDI_SNAPIT$(_WIN64)     ICON                    "ico00007.ico"
 #else
-IDI_SNAPIT              ICON                    "ico00008.ico"
+IDI_SNAPIT              ICON                    "ico00007.ico"
 #endif
 #endif
 #if defined(APSTUDIO_INVOKED) || defined(_WIN64)
 #if defined(APSTUDIO_INVOKED)
-IDI_ENABLED$(_WIN64)    ICON                    "ico00009.ico"
+IDI_ENABLED$(_WIN64)    ICON                    "ico00007.ico"
 #else
-IDI_ENABLED             ICON                    "ico00009.ico"
+IDI_ENABLED             ICON                    "ico00007.ico"
 #endif
 #endif
 #if defined(APSTUDIO_INVOKED) || defined(_WIN64)

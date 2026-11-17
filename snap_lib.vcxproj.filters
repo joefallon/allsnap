@@ -59,6 +59,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\app\allsnap_version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\common\MYDEBUG.H">
       <Filter>Header Files</Filter>
     </ClInclude>

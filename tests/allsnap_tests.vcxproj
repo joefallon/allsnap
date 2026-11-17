@@ -53,7 +53,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Microsoft.VisualStudio.TestTools.CppUnitTestFramework.lib;comctl32.lib;dwmapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Microsoft.VisualStudio.TestTools.CppUnitTestFramework.lib;comctl32.lib;dwmapi.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(VCInstallDir)Auxiliary\VS\UnitTest\lib\$(TestLibraryPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName).dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -61,6 +61,7 @@
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)..\resources;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(UseDebugLibraries)'=='true'">_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='x64'">_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>

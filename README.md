@@ -1,5 +1,15 @@
 # allSnap
 
+Release **2.0.0**, using semantic versioning. The human-readable definition is in
+[allsnap_version.h](src/app/allsnap_version.h), beside the startup file
+[snap_App.c](src/app/snap_App.c). Startup holds it as the `g_version` string;
+the separate numeric instance token is only for detecting a running older copy.
+EXE/DLL version strings and both About templates use the shared version header.
+Windows numeric versions and the application's manifest identity are `2.0.0.0`.
+The header keeps the readable version, numeric resource tuple, About label, and
+instance token together; tests check consistency. A future version bump must also
+update the application's own identity in `resources/allSnap.exe.manifest`.
+
 allSnap is a native Windows tray utility for snapping windows to other windows,
 desktop work areas, center guides, grids, and their previous positions. It also
 provides desktop confinement, configurable spacing, centered resizing, and MDI
@@ -38,6 +48,16 @@ Other configurations use the same `<Platform>\<Configuration>\` layout. Keep eac
 rebuilt EXE and its matching DLL together, including when copying a build elsewhere.
 The solution also builds native test projects and their isolated-process helpers.
 
+For development while an older DLL is still loaded, build into a separate folder:
+
+```powershell
+$releaseDirectory = Join-Path (Get-Location).Path 'build/releases/2.0.0/x64/Release/'
+msbuild .\allsnap.sln /p:Configuration=Release /p:Platform=x64 "/p:OutDir=$releaseDirectory"
+```
+
+Use `Win32` in both places for the 32-bit pair. These output folders contain the
+matching binaries and test helpers; launch the application executable when ready.
+
 ## Run
 
 On 64-bit Windows, **run both versions** to cover x86 and x64 applications. The
@@ -65,6 +85,12 @@ Configure both running variants as needed: their live settings are not synchroni
 Tray enable/disable changes are live only until Settings Apply/OK saves them.
 Exit can remain blocked while a window has active subclass ownership; finish the
 move/resize operation and retry if prompted.
+
+When replacing an installed older version, exit both tray applications and disable
+their old automatic-start entries first. Save your work and restart Windows if the
+old DLL is still locked, then copy both matching EXE/DLL pairs before starting them.
+Using a new version folder avoids overwriting pinned DLLs. Keep the working directory
+pointed at the intended writable INI location when changing executable folders.
 
 ## Settings and configuration
 
@@ -117,6 +143,18 @@ See [tests/README.md](tests/README.md) for the test boundaries. Files in
 [features/](features/) document intended behavior for acceptance tests; they are
 plain specifications with no Gherkin runner. Latest recorded results are in the
 [implementation plan](.ai/features/20261116-modernization/implementation-plan.md).
+
+The automated suite includes native Settings, framed-window geometry, and isolated
+process-lifetime checks. Actual installed hook/Explorer delivery, help rendering,
+mixed-DPI transitions, the older home monitor, and a long-running trial remain
+manual validation items. Passing automated checks does not establish years of
+desktop reliability or explain the previously reported intermittent stops.
+
+Final 2.0.0 checks: **311/311 tests passed** in Debug and Release on Win32 and x64
+(99 unit, 212 acceptance). All eight solution configurations built. Actual EXE/DLL
+metadata, machine types, manifest identities, and x64 icon payloads were inspected
+from the fresh outputs under `build/releases/2.0.0/`. See the implementation plan
+for evidence and limits; no installed processes were stopped or replaced.
 
 ## Known limitations
 

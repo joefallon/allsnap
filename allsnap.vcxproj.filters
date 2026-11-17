@@ -44,6 +44,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\app\allsnap_version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\common\CmnHdr.h">
       <Filter>Header Files</Filter>
     </ClInclude>

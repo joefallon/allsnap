@@ -1,6 +1,6 @@
 # allSnap modernization implementation plan
 
-Status: Phase 15 completes deferred Settings/native tray repairs after the user committed Phase 14 and explicitly authorized regression tests and execution. All 305 tests pass in Debug/Release on Win32/x64 (97 unit, 208 acceptance); all eight solution builds and independent cross-review pass. New regressions demonstrated failures before repairs. Manual Explorer/help rendering, keyboard, hardware/DPI, and long-duration checks remain pending. Keep this living document and `.ai/current-state.md` aligned with actual progress; requirements are in `project-spec.md`.
+Status: Phase 16 sets release 2.0.0 and completes final automated release checks, retaining the pending x64 icon update. All 311 tests pass in Debug/Release on Win32/x64 (99 unit, 212 acceptance); all eight builds and actual binary metadata/icon/manifest inspections pass. Independent review is complete. Manual global-hook/Explorer, keyboard/help rendering, hardware/DPI, and long-duration checks remain pending; no multi-year reliability claim is established. Keep this living document and `.ai/current-state.md` aligned with actual progress; requirements are in `project-spec.md`.
 
 ## Current position
 
@@ -16,14 +16,15 @@ Status: Phase 15 completes deferred Settings/native tray repairs after the user 
 - Completed in Phase 13: INI numeric parsing extracted from profile reading without changing grammar, bounds, errno behavior, or output assignment.
 - Completed in Phase 14: audited low-risk app/engine cleanup inventory, independently cross-reviewed; remaining behavior-sensitive and larger refactoring work deferred explicitly.
 - Completed in Phase 15: deferred Settings help/menu/native callback and tray packet/resource/failure repairs with 19 new acceptance regressions and executed full test matrix.
-- Native unit/acceptance tests now cover 305 methods (97 unit, 208 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
+- Completed in Phase 16: 2.0.0 release identity, six version regressions, fresh isolated builds/tests, and inspection of actual EXE/DLL resources for both architectures.
+- Native unit/acceptance tests now cover 311 methods (99 unit, 212 acceptance). All passed in Debug and Release on Win32 and x64; the acceptance suite includes 12 isolated-process methods using the same Microsoft framework.
 - User handles all commits. Agents do not stage, commit, reset, or amend. Phase boundaries below are review checkpoints, not claims of commits already created.
 
 ## Milestones and human commit checkpoints
 
 | Phase | Reviewable scope | Current verification |
 | --- | --- | --- |
-| 1. Test foundation | Microsoft framework, runner, documentation, production-C fixture seams, initial confinement/snapping contracts | Implemented. Current suite: 305/305 in all four architecture/configuration runs. Later contract review corrected inherited assumptions rather than freezing legacy outputs. |
+| 1. Test foundation | Microsoft framework, runner, documentation, production-C fixture seams, initial confinement/snapping contracts | Implemented. Current suite: 311/311 in all four architecture/configuration runs. Later contract review corrected inherited assumptions rather than freezing legacy outputs. |
 | 2. Lifecycle reliability | Hook/subclass ownership and failures, safe shutdown bookkeeping, diagnostics | Initial failure-handling checkpoint passed 23 focused tests. Phase 5 supersedes scalar accounting and simulated ownership with a process-aware registry and actual child-process coverage. |
 | 3. Monitor/grid and Settings repairs | Workarea/guide separation, validation, Old position, Settings persistence and failure reporting, held-key semantics | Implemented. Geometry, Old position, input, validation reentrancy, Apply acknowledgement/retry, and opening-state regressions demonstrated red before repair; final suite green on both architectures. Remaining Settings paths require desktop validation. |
 | 4. Visible frames, spacing, and desktop geometry | DWM/region/manual crop composition, collapsed spacing UI/INI, ordinary/HiDPI coordinates, monitor union confinement | Implemented. Independent GDI coverage oracle plus native framed ordinary/Ctrl resize cases are green in the final matrix. Real mixed-DPI transitions and home-monitor checks remain pending. |
@@ -38,6 +39,7 @@ Status: Phase 15 completes deferred Settings/native tray repairs after the user 
 | 13. Clean Code: INI numeric parsing | Separate text conversion from the existing profile read/length guard | Complete and independently reviewed; all eight builds and whitespace checks pass. Existing tests inspected, not executed. |
 | 14. Clean Code: remaining low-risk inventory | Unused private state/declarations/locals, obsolete commented code, equivalent guards/returns, shared page setup | Complete and cross-reviewed; all eight builds and whitespace checks pass. Tests not executed. |
 | 15. Deferred Settings repairs | Help dispatch, menu ownership, property-sheet native contracts, tray packets/resources/failure cleanup | Complete and cross-reviewed. New regression failures reproduced before repair; 305/305 in all four Debug/Release architecture runs and all eight builds pass. |
+| 16. Version 2.0.0 release checks | Readable startup identity, shared native metadata/About text, retained x64 icon, final fresh binaries | Complete and reviewed; 311/311 across Debug/Release Win32/x64, eight builds, actual binary metadata/manifest/icon checks pass. Manual desktop validation remains separate. |
 | Later backlog phases | Deeper Clean Code refactoring and remaining behavior repairs | Settings/tray findings addressed in Phase 15; other deferred candidates remain separate. |
 ## Execution sequence
 
@@ -298,3 +300,26 @@ Native contract references: [WM_HELP](https://learn.microsoft.com/en-us/windows/
 ### Remaining limits
 
 Tests suppress interactive popup/help rendering and substitute Explorer/resource-failure delivery. Actual Explorer/host-menu integration, help rendering, keyboard navigation, display hardware/mixed DPI and a long-running trial remain pending. Host/debug menu ownership, debug clipboard/file-dialog capacities, multi-string bounds, debug macros, typed dispatch, and larger architecture work remain outside this Settings increment. These repairs do not establish the cause of intermittent stops; rollback after Shell rejection remains best-effort.
+
+## 2026-11-17 follow-up: x64 icon selection
+
+After committing Phase 15, the user requested `ico00007.ico` for x64. Updated the x64 application and ordinary enabled-tray resource mappings (including resource-editor variants); the XP-style enabled tray mapping already used that asset. Win32 and disabled-state icons are unchanged. Release resource compilation passed for Win32/x64 via the ResourceCompile target; no tests were requested or run, and running executables/DLLs were not replaced. Rebuild/restart x64 to use the new resources. No staging or commits performed.
+
+## Phase 16 execution: 2.0.0 and final release checks
+
+The user requested a clean 2.0.0 release with a readable source version, passing tests, and README/state updates before their own master commit. Retained the existing uncommitted icon/documentation changes. The literal `ALLSNAP_VERSION_TEXT "2.0.0"` is in `src/app/allsnap_version.h`, beside startup. `snap_App.c` exposes it as the human-readable `g_version` TCHAR array and uses it in the About caption; a separate numeric `g_instance_version` preserves the instance-message protocol and distinguishes legacy copies. Mutex/window names, settings, hook behavior, and DLL API are unchanged.
+
+Both active RC files consume shared text/numeric values. Windows fixed versions are 2.0.0.0, string versions are 2.0.0, both About templates no longer say Beta, and Release metadata no longer sets SpecialBuild. Current per-architecture OriginalFilename values replace stale historical names. RC dialog text requires one literal, so the full About label also lives in the obvious version header and is checked against the release text by acceptance coverage. Resource-editor TEXTINCLUDE records retain the shared include. The app manifest's own version is 2.0.0.0; Common Controls6.0.0.0 and asInvoker are unchanged.
+
+Added two unit methods in `tests/unit/version_tests.cpp` and four acceptance methods in `tests/acceptance/version_acceptance.cpp`, using the existing Microsoft framework. They check text/tuple consistency and legacy-token separation, actual compiled fixed/string/flag VERSIONINFO, and real hidden About resources. Version.lib is linked only by tests. Initial Win32 Debug verification passed 310/311 and caught missing `_DEBUG` in test resource compilation; the test project's resource definitions now match its C/C++ configuration. The final matrix then passed:
+
+| Platform | Debug | Release | Suite composition |
+| --- | --- | --- | --- |
+| Win32 | 311/311 | 311/311 | 99 unit, 212 acceptance |
+| x64 | 311/311 | 311/311 | 99 unit, 212 acceptance |
+
+All eight configurations built into isolated `build/releases/2.0.0/<platform>/<configuration>/` directories, including test helpers. The actual EXE/DLL files from every configuration were inspected for fixed/text product/file versions, Debug/Release flags, architecture, and correct original filenames. Actual embedded manifest identities/dependency/execution level passed. X64 group icons109/170/217 use the exact image payloads from `ico00007.ico` (the resource compiler normalizes the ICO directory's plane field). Resource inspection loaded binaries only as data, without executing application/DLL entry points. The final regression matrix retains all 12 isolated-process cases and prior Settings/refactoring coverage.
+
+Build logs and artifact inspection are under ignored `build/releases/2.0.0/`; TRX/runner logs are under `build/test-results/<platform>/<configuration>/release-2.0.0-final/`. Independent review found no required corrections; project/filter paths, local links, new-file whitespace, and `git diff --check` were checked. No staging/commits, installed-process termination, global-hook launch, user INI change, or replacement of locked binaries occurred. Fresh matching Release pairs are ready in the Win32/Release and x64/Release subfolders.
+
+Automated release checks do not establish years of real desktop reliability or diagnose intermittent stops. Actual global-hook/Explorer delivery, keyboard/help rendering, 100%/HiDPI/mixed monitors and the older home monitor, and a long-running trial remain manual validation. The README records these limits and the old-DLL upgrade procedure. Other deferred behavioral/refactoring items remain outside this version release.

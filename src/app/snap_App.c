@@ -10,6 +10,7 @@
 #include "snap_lib.h"
 
 #include "snap_App.h"
+#include "allsnap_version.h"
 #include "snap_settings.h"
 #include "snap_ini.h"
 #include "snap_mywm_msg.h"
@@ -36,7 +37,9 @@ BOOL g_isXP;
 HWND			g_hwndAbout = NULL;
 
 
-UINT			g_version = 0x013100;
+/* Human-readable release version; edit the adjacent allsnap_version.h. */
+static const TCHAR g_version[] = _T(ALLSNAP_VERSION_TEXT);
+static const UINT g_instance_version = ALLSNAP_INSTANCE_VERSION;
 
 
 
@@ -214,7 +217,7 @@ BOOL OneInstanceOnly(void){
 	else if (dwLastError == ERROR_ALREADY_EXISTS){
 		HWND prevAppWnd = FindWindow(g_szClassName,g_szTitleName);
 		if (prevAppWnd != NULL){
-			SendMessage(prevAppWnd,MYWM_UNHIDEICON,g_version,0L);
+			SendMessage(prevAppWnd,MYWM_UNHIDEICON,g_instance_version,0L);
 		}
 		return FALSE;
 	}
@@ -228,7 +231,7 @@ BOOL OneInstanceOnly(void){
 			return FALSE;
 		}
 		else if (dwLastError == ERROR_ALREADY_EXISTS){
-			MessageBox(g_hWnd,_T("This beta can't be run at the same time\nas an earlier version of allSnap"),
+			MessageBox(g_hWnd,_T("This version can't be run at the same time\nas an earlier version of allSnap"),
 			_T("Sorry... Application Closing"),MB_OK);
 			return FALSE;
 		}
@@ -491,7 +494,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 #endif
 		case MYWM_UNHIDEICON:
-			if (wParam != g_version){
+			if (wParam != g_instance_version){
 				MessageBox(hWnd,_T("allSnap did not start because this version was previously running in a hidden state."),
 					_T("allSnap: blocked from starting by previous version"),MB_OK|MB_ICONEXCLAMATION);
 
@@ -562,12 +565,15 @@ void ContextMenu(HWND hWnd){
 
 INT_PTR CALLBACK AboutProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam){
 	LOGBRUSH logbrush;
+	TCHAR caption[MAX_LOADSTRING];
 	static COLORREF BkColor, FgColor;
 	static HBRUSH hBkBrush;
 	
 	switch(uMsg){
 		
 		case WM_INITDIALOG:
+			_sntprintf_s(caption,chDIMOF(caption),_TRUNCATE,_T("About allSnap %s"),g_version);
+			SetWindowText(hDlg,caption);
 			SetClassLongPtr(hDlg,GCLP_HICON,(LONG_PTR)NULL);
 			// initializing dialog
 			// create background brush and initialize colors

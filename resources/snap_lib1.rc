@@ -1,6 +1,7 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "resource2.h"
+#include "../src/app/allsnap_version.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -35,6 +36,7 @@ END
 2 TEXTINCLUDE 
 BEGIN
     "#include <windows.h>\r\n"
+    "#include ""../src/app/allsnap_version.h""\r\n"
     "\0"
 END
 
@@ -65,8 +67,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_CAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,4,2,0
- PRODUCTVERSION 1,4,2,0
+ FILEVERSION ALLSNAP_VERSION_RESOURCE
+ PRODUCTVERSION ALLSNAP_VERSION_RESOURCE
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -84,12 +86,16 @@ BEGIN
             VALUE "Comments", "http://ivanheckman.com/allsnap"
             VALUE "CompanyName", "Ivan Heckman"
             VALUE "FileDescription", "allSnap hooking Library"
-            VALUE "FileVersion", "1, 5, 0, 0"
+            VALUE "FileVersion", ALLSNAP_VERSION_TEXT
             VALUE "InternalName", "snap_lib"
             VALUE "LegalCopyright", "Copyright (C) 2002-2008"
-            VALUE "OriginalFilename", "snap_libA.dll or snap_libW.dll"
+#ifdef _WIN64
+            VALUE "OriginalFilename", "snap_lib64.dll"
+#else
+            VALUE "OriginalFilename", "snap_lib.dll"
+#endif
             VALUE "ProductName", "allSnap"
-            VALUE "ProductVersion", "1, 5, 0, 0"
+            VALUE "ProductVersion", ALLSNAP_VERSION_TEXT
         END
     END
     BLOCK "VarFileInfo"
